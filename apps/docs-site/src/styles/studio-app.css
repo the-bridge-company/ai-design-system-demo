@@ -471,6 +471,14 @@
   line-height: var(--typography-ui-line-height);
 }
 
+/* A row not open yet (ProductsNav NavPage.soon): a span, the same box as a link row. */
+.rail-section .rail-soon {
+  gap: var(--space-3);
+  min-height: var(--size-9);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
 /* The sample team reserves its own two product rows from first paint (ProductsNav SAMPLE_PRODUCT_ROWS). */
 :root[data-sample-team] .rail-products[data-pending] .rail-skel:nth-child(n + 3) {
   display: none;
@@ -487,7 +495,8 @@
   padding: 0 var(--space-3);
 }
 
-.rail-section a svg {
+.rail-section a svg,
+.rail-section .rail-soon svg {
   width: var(--icon-size-md);
   height: var(--icon-size-md);
 }

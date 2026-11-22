@@ -1,5 +1,12 @@
 # DS Bridge: Figma Community listing
 
+> **To do for the founder:** the plugin on Figma Community is the tokens-only MVP (owner decision 2026-11-19).
+> Build the plugin from `main` once PR #1218 (`agent/plugin-tokens-only`) is merged, then republish this text
+> (tagline, description, data security answers) and the images (cover, carousel 1) on Figma Community, from Figma
+> desktop: **Publish new version**, see "How to publish" below. Until then the live listing still promises what is
+> missing in Figma and Compare with code. The copy here and every image match that code: no component and no Compare
+> with code in the MVP. Carousels 2 and 3 are Bridge Studio pages and show no plugin feature beyond tokens.
+
 Everything the publish dialog asks for, ready to paste, plus the steps. Images are in this folder; the sources
 that render them are in [`src/`](src/) (see "Rebuild the images" at the end).
 
@@ -15,16 +22,20 @@ and the plugin window title (`src/main/index.ts`). "Bridge" alone is too generic
 
 ## Scope
 
-The listing makes one promise, the one decided for the MVP (owner, 2026-11-11, narrowed on 2026-11-18):
-**"Your tokens sync both ways."** ("Start from a mockup" is a Studio feature, not the plugin's.) What is missing in
-Figma and Compare with code were dropped on 2026-11-18: matching by name could not see a team's library components,
+The published plugin is a tokens-only MVP (owner decision 2026-11-19, confirmed 2026-11-22): Pull and Push of tokens
+(a suggestion or a pull request), Sign in with Bridge, contrast checks. The listing makes one promise:
+**"Your tokens sync both ways between GitHub and Figma."** ("Start from a mockup" is a Studio feature, not the
+plugin's.) It never promises or shows the list of components missing from the Figma file, Compare with code, pulling
+or pushing components, or Ask Claude to fix. Matching components by name could not see a team's library components,
 and a list of missing components had no action while drawing them is hidden.
 
 Everything else the code can do is hidden behind one constant, `PLUGIN_MVP_SCOPE` in `src/shared/scope.ts`, and is
 never mentioned here: drawing or updating component sets from code, two-way variant sync, component changes sent
 from Figma as requests or branches, "Ask Claude to fix it" and the fix loop, "Draft with Claude" and the Claude setup
-card, what is missing in Figma and Compare with code. "Send to Figma" (2026-11-10) is a Studio button, off there; the plugin has none. Setting the constant to `false`
-shows them again; this listing would then need its own update.
+card, what is missing in Figma, Compare with code and the "Spec source" setting. With the constant on, the plugin
+reads no component at all, neither from the code nor from the Figma file. "Send to Figma" (2026-11-10) is a Studio
+button, off there; the plugin has none. Setting the constant to `false` (or `fullScope()` in the tests) shows them
+again; this listing would then need its own update.
 
 ## Tagline (52 of 60 characters)
 
@@ -131,7 +142,7 @@ Re-check these before changing the copy above.
 
 | Claim | Where it is in the code |
 | --- | --- |
-| Only the MVP promise is shown: no component, no Compare with code | `src/shared/scope.ts` (`PLUGIN_MVP_SCOPE`), `src/ui/index.ts` (`componentsGroup`, `compareBlock`, `fidelityGroup` return null), `test/flow-mvp-scope.test.ts` |
+| Only the MVP promise is shown: no component, no list of what is missing in Figma, no Compare with code | `src/shared/scope.ts` (`PLUGIN_MVP_SCOPE`), `src/ui/index.ts` (`componentsGroup`, `compareBlock`, `fidelityGroup` return null; `loadPull` reads no component spec, no Bridge set and no component name), `test/flow-mvp-scope.test.ts`, `test/flow-mvp-hidden-1119.test.ts` (and `test/flow-full-scope-1119.test.ts` for the code kept) |
 | Sign in with Bridge, no token to paste, sign-in expires | `src/sync/bridge-sign-in.ts` (`startBridgeSignIn`, `pollBridgeSignIn`), `apps/docs-site/api/plugin-link/index.ts` |
 | Pasted fine-grained token for developers | `src/ui/index.ts` (`viewSettings`, "For developers: connect with a token") |
 | Token in client storage only, never in the file | `src/main/github-token.ts` (`saveGitHubToken`) |

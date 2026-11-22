@@ -19,7 +19,8 @@ is synced live and the plugin never writes to `main` directly.
 
 ## Scope (MVP)
 
-The plugin keeps one promise (owner decisions 2026-11-11 and 2026-11-18): **"Your tokens sync both ways."**
+The published plugin is a tokens-only MVP (owner decision 2026-11-19, after 2026-11-11 and 2026-11-18). It keeps one
+promise: **"Your tokens sync both ways between GitHub and Figma."**
 
 | Shown | Hidden for the MVP, code kept |
 | --- | --- |
@@ -28,7 +29,8 @@ The plugin keeps one promise (owner decisions 2026-11-11 and 2026-11-18): **"You
 | Push of variable edits: a pull request or a suggestion, contrast checked | Component changes sent from Figma: requests, library branches, "Request a component change", "Not in the design system yet", "Fix in Figma first" |
 | Contrast checked before a send | "Ask Claude to fix it", "Ask Claude to fix all", Claude's fixes and their approval (on hold since 2026-11-06) |
 | | "Draft with Claude" and the Claude card in Settings |
-| | What is missing in Figma (by name only, blind to library components) and Compare with code (it compares the sets Bridge drew), hidden on 2026-11-18 |
+| | What is missing in Figma (by name only, blind to library components) and Compare with code (it compares the sets Bridge drew), hidden since 2026-11-19: the pull reads no component at all |
+| | The "Spec source" setting (where component sets are built from) |
 
 One constant decides it: `PLUGIN_MVP_SCOPE` in `src/shared/scope.ts` (`true` ships). Setting it to `false` shows the
 hidden features again, as `JIRA_IN_BRIDGE` does in the site. The sections below marked **Hidden in the MVP** document
@@ -356,14 +358,15 @@ set description says "In code, reduced motion turns this off."
 
 ### Compare with code (does each component look like the code?)
 
-Shown in the MVP. It compares the sets that carry Bridge's mark (`dsbridge` / `componentId`): the comparison needs the
+**Hidden in the MVP** (owner decision 2026-11-19). It compares the sets that carry Bridge's mark (`dsbridge` / `componentId`): the comparison needs the
 variants and parts Bridge drew. The team's own components that match a code component by name (see "What is missing
 in Figma") are listed under it with one line, "Bridge can't compare this one yet: it was not drawn by Bridge.", and
 nothing is redrawn.
 
 ### What is missing in Figma
 
-On Pull, the Components group says "N of M components from the code are in this file", names the missing ones, and
+**Hidden in the MVP** (owner decision 2026-11-19): the MVP pull reads no component, from the code or the file. With
+the full scope, on Pull, the Components group says "N of M components from the code are in this file", names the missing ones, and
 folds the ones "found by name". A code component is in the file when a set Bridge drew carries its mark, or else when
 a local component set or lone component has the same name after normalisation (`src/sync/figma-names.ts`: the last
 segment of a path, so "Forms/Select" is Select; case, spaces, hyphens, underscores and dots ignored). The mark wins: a

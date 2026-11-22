@@ -5,6 +5,6 @@
   "buildCommand": "cd ../.. && npm run admin:build",
   "outputDirectory": "dist",
   "ignoreCommand": "node ../../scripts/vercel-ignore.mjs admin",
-  "git": { "deploymentEnabled": { "agent/**": false, "test/**": false, "changeset-release/**": false } },
+  "git": {"deploymentEnabled": {"agent/**": false, "test/**": false, "changeset-release/**": false, "fix/**": false, "feat/**": false, "chore/**": false, "docs/**": false, "site/**": false, "bridge-data": false, "bridge-visual": false, "bridge-shots": false, "bridge-requests": false, "sample-team-member": false, "figma-file-*": false}},
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

@@ -6,7 +6,7 @@
   "buildCommand": "cd ../.. && npm run docs:build",
   "outputDirectory": "dist",
   "ignoreCommand": "node ../../scripts/vercel-ignore.mjs docs",
-  "git": { "deploymentEnabled": { "agent/**": false, "test/**": false, "changeset-release/**": false } },
+  "git": {"deploymentEnabled": {"agent/**": false, "test/**": false, "changeset-release/**": false, "fix/**": false, "feat/**": false, "chore/**": false, "docs/**": false, "site/**": false, "bridge-data": false, "bridge-visual": false, "bridge-shots": false, "bridge-requests": false, "sample-team-member": false, "figma-file-*": false}},
   "crons": [{ "path": "/api/account?export=1", "schedule": "17 3 * * *" }, { "path": "/api/account?digest=1", "schedule": "5 8 * * *" }],
   "redirects": [
     {"source": "/", "has": [{"type": "host", "value": "bridge.floriangouloubi.com"}], "destination": "https://bridgedesignsystem.com/", "permanent": true},

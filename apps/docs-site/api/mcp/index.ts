@@ -35,7 +35,7 @@
 // (email members in Studio), PUBLIC_SITE_URL (the issuer; else the request's origin). Nothing here logs.
 
 import { randomBytes } from 'node:crypto';
-import { BridgeContext, handleHttp, maskEmail, pieces, type BehaviorPreviewHost, type ClaudeDesignHost, type WhoAmI } from '@bridge-ds/mcp';
+import { BridgeContext, handleHttp, maskEmail, pieces, sharedSnapshots, type BehaviorPreviewHost, type ClaudeDesignHost, type WhoAmI } from '@bridge-ds/mcp';
 import { contributorOf, cookieName, designerProductsFor, handleContribute, ownedWorkFor, signSession, type ContribEnv } from '../contribute/index.js';
 import { displayName, sessionAccount } from '../_lib/account.js';
 import { sameEmail } from '../_lib/canonical-email.js';
@@ -601,9 +601,12 @@ async function onMcp(req: Request, env: ConnectorEnv, deps: ConnectorDeps, svc: 
   const claudeDesign = claudeDesignHost(grant.repo, svc.redis, site, deps.fetch);
   // Claude's preview of a behavior request: recorded by this server with Bridge's app, as this grant's person.
   const behaviorPreview = behaviorPreviewHost({ member: emailMember, token }, grant.repo, env, deps, svc);
+  // The repository's files are kept in this warm function by commit (sharedSnapshots): a call on an unchanged
+  // repository reads the branch's commit live (with this person's GitHub or proxy, so their access is checked on every
+  // call) and nothing else, instead of the tree and every token file through the proxy again.
   const ctx = deps.context
     ? await deps.context({ repo: grant.repo, token, ...(routed ? { fetch: ghFetch } : {}), ...(owned ? { owned } : {}), identity, claudeDesign, behaviorPreview })
-    : await BridgeContext.create({ repo: grant.repo, token, surface: 'mcp', fetch: ghFetch as unknown as typeof fetch, ...(owned ? { owned } : {}), identity, claudeDesign, behaviorPreview });
+    : await BridgeContext.create({ repo: grant.repo, token, surface: 'mcp', fetch: ghFetch as unknown as typeof fetch, ...(owned ? { owned } : {}), identity, claudeDesign, behaviorPreview, snapshots: sharedSnapshots });
   // The body was read here (to record the steps): the transport takes it parsed, the request goes on without it.
   const headers = new Headers(req.headers);
   headers.delete('content-length');
@@ -669,7 +672,7 @@ async function onView(view: string, req: Request, env: ConnectorEnv, deps: Conne
     const routed = Boolean(member || designerProducts?.length);
     const ctx = deps.context
       ? await deps.context({ repo: t.full, token, ...(routed ? { fetch: ghFetch } : {}) })
-      : await BridgeContext.create({ repo: t.full, token, surface: 'mcp', fetch: ghFetch as unknown as typeof fetch });
+      : await BridgeContext.create({ repo: t.full, token, surface: 'mcp', fetch: ghFetch as unknown as typeof fetch, snapshots: sharedSnapshots });
     try {
       const r = await (deps.checkPieces ?? ((c, n) => pieces.missingPiecesOp(c, { pr: n, record: true })))(ctx, /^\d+$/.test(pr) ? Number(pr) : pr);
       return json(200, { checked: r.recorded, pieces: r.pieces.length }, NO_STORE);

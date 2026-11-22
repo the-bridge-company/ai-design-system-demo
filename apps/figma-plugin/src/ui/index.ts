@@ -855,7 +855,8 @@ async function loadPull(prev?: PullState): Promise<PullState> {
   let specs: LoadedSpecs['specs'] | undefined;
   let pulledFrom: LoadedSpecs['source'];
   const before: Record<string, string> = { ...(prev?.before ?? {}) };
-  try {
+  // MVP scope (owner decision 2026-11-19): tokens only, so the pull reads no component, from the code or the file.
+  if (fullScope()) try {
     const loaded = await specSource(state.init!.settings.specSource ?? 'auto').load(getClient(), analysis.headFiles.treeSha, analysis.headFiles.config, analysis.head);
     pulledFrom = loaded?.source;
     measured = loaded?.measured;
@@ -885,7 +886,7 @@ async function loadPull(prev?: PullState): Promise<PullState> {
     componentsError = componentsErrorOf(err, 'pull');
   }
   // The file's own components by name, for what is missing in Figma (a failed read only loses the name matches).
-  // Full scope only: the MVP shows no component (owner decision 2026-11-18), so a big file is not read for names.
+  // Full scope only: the MVP shows no component (owner decision 2026-11-19), so a big file is not read for names.
   const figmaComponents = components && fullScope() ? await request('list-components', {}).catch(() => undefined) : undefined;
   const refs = reviews.length ? await loadReferenceManifest(getClient()).catch(() => undefined) : undefined;
   const lastBranch = state.init!.sync.lastPrBranch;
@@ -2107,7 +2108,7 @@ function viewPull(): View {
         ? { label: 'Try again', onClick: retryComponents, secondary: { label: 'Check again', onClick: checkPull } }
         : prop.kept.length
           ? { label: 'Check again', onClick: checkPull, secondary: { label: 'Send my edits', onClick: () => { state.tab = 'push'; scanPush(); } } }
-          : hasBuiltSets(p) && !problems.length
+          : fullScope() && hasBuiltSets(p) && !problems.length
             // Components were just built: the next thing to do is see whether they look like the code (no dead end).
             ? { label: 'Compare with code', onClick: () => void checkFidelityAnywhere() }
             : { label: 'Check again', onClick: checkPull },
@@ -2203,7 +2204,7 @@ function viewPull(): View {
   if (prop.skipped.length) body.push(issueList('warn', 'Not written', prop.skipped.map((s) => ({ code: 'file-problem', severity: 'warning', message: `${s.path}: ${s.reason}` }))));
   body.push(notes(a));
   // Repository, commits, spec source and collections: last, folded, for whoever needs them (never above the changes).
-  body.push(forDevelopers([...repoRows(), ['Last pulled commit', short(a.baseSha)], ['Latest commit', short(a.headSha)], ['Collections', andList(pullCollections(prop.plan))], ['Spec source', p.measuredOnly ? `Measured only: ${p.measuredOnly.sets} sets, ${p.measuredOnly.variants} variants from ${p.measuredOnly.stories} stories` : measuredLine(p.measured)], ...fixesRows(p.fixes)]));
+  body.push(forDevelopers([...repoRows(), ['Last pulled commit', short(a.baseSha)], ['Latest commit', short(a.headSha)], ['Collections', andList(pullCollections(prop.plan))], ...(fullScope() ? [['Spec source', p.measuredOnly ? `Measured only: ${p.measuredOnly.sets} sets, ${p.measuredOnly.variants} variants from ${p.measuredOnly.stories} stories` : measuredLine(p.measured)] as [string, string | undefined], ...fixesRows(p.fixes)] : [])]));
 
   const open = prop.unresolvedConflicts.length;
   // New sets from code: the choice sits next to the action it changes (on by default on a first pull).
@@ -2415,12 +2416,12 @@ function reviewGroup(p: PullState, reviews: ComponentReview[], title = 'Componen
 
 /** Pull preview: updates to review for the generated sets, new sets opt-in, and what cannot be bound. */
 function componentsGroup(p: PullState): Child {
+  // MVP (owner decision 2026-11-19): tokens only, no component and no list of what is missing in Figma. Names alone
+  // cannot tell a team's library components apart, and nothing can be done with the list while drawing is hidden.
+  if (!fullScope()) return null;
   if (p.componentsError) return componentsErrorCallout(p.componentsError);
   const plan = p.components;
   if (!plan) return null;
-  // MVP (owner decision 2026-11-18): tokens only. Names alone cannot tell a team's library components apart, and
-  // nothing can be done with a list of missing components while drawing them is hidden.
-  if (!fullScope()) return null;
   const reviews = [...p.reviews.filter((r) => !p.done.has(r.componentId)), ...p.done.values()];
   const fresh = plan.components.filter((c) => c.status === 'new');
   const upToDate = plan.components.filter((c) => c.status === 'unchanged' && !p.done.has(c.componentId));
@@ -2538,7 +2539,7 @@ const COMPARE_LEDE = 'Do the components in this file still look like the code? B
 /** Check, Review, Apply: open for a first pull, one line to unfold for someone who has pulled before. */
 function howUpdatesWork(returning: boolean): HTMLElement {
   const card = steps([
-    ['Check', fullScope() ? "Bridge reads the design system's tokens and components." : "Bridge reads the design system's tokens, and which of its components this file has."],
+    ['Check', fullScope() ? "Bridge reads the design system's tokens and components." : "Bridge reads the design system's tokens."],
     ['Review', 'Every new, edited or deleted token is listed with its value. Nothing is written yet.'],
     ['Apply', fullScope() ? 'Figma variables are created or updated, and components are built from the code. Your own edits stay until you send them from Push.' : 'Figma variables are created or updated. Your own edits stay until you send them from Push.'],
   ]);
@@ -2566,7 +2567,7 @@ function lastCompareLine(raw: string | undefined): { line: string; differs: numb
  */
 function compareBlock(): Child {
   const init = state.init!;
-  // Compare with code compares the sets Bridge drew: none in the MVP, where drawing is hidden.
+  // Compare with code compares the sets Bridge drew: none in the MVP, where drawing is hidden (owner decision 2026-11-19).
   if (!fullScope() || !init.sync.baseSha) return null;
   const last = lastCompareLine(init.sync.lastCompare);
   return h(
@@ -3256,6 +3257,7 @@ function fidelityThumbs(name: string, images: { key: string; figma: string; code
 
 /** Pull, after components: does each generated set look like the code? */
 function fidelityGroup(p: PullState): Child {
+  // MVP (owner decision 2026-11-19): no Compare with code.
   if (!fullScope()) return null;
   const generated = (p.components?.components ?? []).filter((c) => c.status !== 'new');
   // The team's own components under a code name: the comparison needs the variants Bridge drew, so each says so.
@@ -4994,7 +4996,7 @@ function connectedView(): View {
             ['Repository', init.settings.repo],
             ['Branch', init.settings.branch],
             ['Tokens folder', init.settings.tokensPath],
-            ['Spec source', specSourceLabel(init.settings.specSource)],
+            ...(fullScope() ? [['Spec source', specSourceLabel(init.settings.specSource)] as [string, string]] : []),
             ['GitHub token', bridge ? 'From the Bridge sign-in, on this computer only' : 'Pasted, on this computer only'],
           ] as [string, string][]).map(([k, v]) => [h('dt', null, k), h('dd', { class: 'mono' }, breakable(v))]),
         ),
@@ -5058,7 +5060,8 @@ function viewSettings(): View {
               h('summary', null, 'For developers'),
               field('Base branch', 'branch', 'Updates read from it; changes sent for review target it.', 'main'),
               field('Tokens folder', 'tokensPath', "Used when the design system has no bridge.config.json to say where its tokens are.", 'tokens'),
-              h(
+              // Where component sets are built from: full scope only (the MVP pulls no component).
+              !fullScope() ? null : h(
                 'label',
                 { class: 'field' },
                 h('span', null, 'Spec source'),
@@ -5092,7 +5095,7 @@ function viewSettings(): View {
               h('span', { class: 'opt-text' }, h('span', { class: 'opt-title' }, 'Design system'), h('small', { class: 'mono-line' }, init.settings.repo)),
               unsure ? null : h('span', { class: 'opt-status ok' }, icon('check'), 'Connected'),
             ),
-            forDevelopers([['Branch', init.settings.branch], ['Tokens folder', init.settings.tokensPath], ['Spec source', init.settings.specSource ? specSourceLabel(init.settings.specSource) : undefined]]),
+            forDevelopers([['Branch', init.settings.branch], ['Tokens folder', init.settings.tokensPath], ['Spec source', fullScope() && init.settings.specSource ? specSourceLabel(init.settings.specSource) : undefined]]),
             h('div', { class: 'inline-actions' }, h('button', { class: 'btn ghost', 'data-focus-id': 'repo-edit', onClick: () => { state.expanded.add('repo-edit'); render(); } }, 'Edit')),
           ),
       // A saved token is a state, not a question: one row with "Connected" (or "Stopped working") and its actions.

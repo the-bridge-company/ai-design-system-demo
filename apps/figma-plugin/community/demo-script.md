@@ -4,10 +4,9 @@ Figma support asked for "a screen recording or demo video showcasing how the res
 Figma". This is a 60 to 90 second recording, shot in the Figma desktop app with QuickTime, then a short reply with an
 unlisted link. Nothing here publishes the plugin or contacts Figma: you do both by hand.
 
-What the video must prove is the listing's one promise: "Your tokens sync both ways. Bridge tells you what is missing
-in your Figma and checks that it has caught up with the code." In this order: the plugin reads a GitHub repository,
-writes Figma Variables from it and says which components from the code the file is missing, a designer edits a
-variable, and the plugin sends that edit back as a pull request checked for contrast. Show only what the plugin shows
+What the video must prove is the listing's one promise (tokens-only MVP, owner decision 2026-11-19): "Your tokens
+sync both ways between GitHub and Figma." In this order: the plugin reads a GitHub repository, writes Figma Variables
+from it, a designer edits a variable, and the plugin sends that edit back as a pull request checked for contrast. Show only what the plugin shows
 (see [`listing.md`](listing.md), "Scope"), never a token on screen.
 
 ## Before recording (not filmed)
@@ -18,10 +17,8 @@ variable, and the plugin sends that edit back as a pull request checked for cont
    plugin from manifest...**. If an older copy named **Bridge** is still listed, remove it first in **Plugins >
    Development > Manage plugins in development**, so the menu shows only **DS Bridge**, the name on the listing.
 2. **Repository.** The public sample team `acme-design-demo/bridge-demo-ds` (Acme Design). Its `bridge.config.json`
-   says `"changes": "direct"`, so Push opens a real pull request there, which is what the video shows. Its
-   `component-specs.json` is there, so Pull lists the components missing in Figma. It has no Figma reference images
-   (`figma-references/` on `bridge-visual`) and the new file has no set made from code, so **Compare with code is not
-   in the video**.
+   says `"changes": "direct"`, so Push opens a real pull request there, which is what the video shows. The plugin
+   shows tokens only: no component, no list of what is missing in Figma, no Compare with code.
 3. **Connect, off camera.** In a new empty design file named `DS Bridge demo`, run the plugin, **Settings > Sign in
    with Bridge**, pick **Acme Design** in the browser, come back. If the Acme team is not in your Bridge account,
    use **For developers: connect with a token** instead, with a fine-grained token for `acme-design-demo/bridge-demo-ds`
@@ -47,18 +44,18 @@ Total target: about 80 seconds. Move the mouse slowly and pause one second on ea
 | # | Time | Action | The viewer must see | Max |
 | --- | --- | --- | --- | --- |
 | 1 | 0:00 | Press **Record**. In the empty file, **Plugins > Development > DS Bridge**. | The plugin window, titled **DS Bridge**, opens on **Pull**: "Get your design system", "First time in this file: Bridge adds its variables." Tabs Pull, Push, Settings. | 6 s |
-| 2 | 0:06 | Click **Check for updates**. Open **See the N variables**, scroll once, then open **N components missing in Figma**. | "Bring your design system into this file", **Changes in the design system** with token names and values, then **Components**: "0 of N components from the code are in this file" and the missing ones by name. The button **Apply to Figma**. Nothing is written yet. | 15 s |
+| 2 | 0:06 | Click **Check for updates**. Open **See the N variables**, scroll once. | "Bring your design system into this file", **Changes in the design system** with token names and values. The button **Apply to Figma**. Nothing is written yet. | 15 s |
 | 3 | 0:21 | Click **Apply to Figma**. | The progress line ("Writing variables"), then "Your design system is in Figma". | 6 s |
 | 4 | 0:27 | Click an empty spot of the canvas, open **Local variables** in the right panel. | The collections **Primitives, Brand, Base, Semantic, Density, Component**; in **Semantic**, the **Light** and **Dark** columns, values shown as aliases (`palette/neutral/600`). | 10 s |
 | 5 | 0:37 | In **Semantic**, row `color/text/muted`, **Light** column: change `palette/neutral/600` to `palette/neutral/700`. Close the window. | The alias changing in the Light column only. | 8 s |
 | 6 | 0:45 | In the plugin, **Push** tab, **Scan for changes**. Open the contrast line under the change. | The row `color.text.muted` with the swatch before and after for Light, "Contrast: N pairs checked, all pass" with AA or AAA per pair, **Send for review** selected as where it goes. | 12 s |
 | 7 | 0:57 | Click **Send for review**. When the result shows, click **Open on GitHub**. | The plugin's result ("Sent for review"), then the pull request on github.com: title, labels `tokens` and `source: figma`, the change table with the Contrast column. Scroll once. | 12 s |
-| 8 | 1:09 | Back in Figma, plugin **Pull** tab, **Check for updates**. | Where the file stands against the code: your edit under **Your Figma edits, in review**, and the missing components listed again. This is Bridge checking that Figma caught up with the code. | 8 s |
+| 8 | 1:09 | Back in Figma, plugin **Pull** tab, **Check for updates**. | Where the file stands against the code: your edit under **Your Figma edits, in review**, until the change is in the design system. | 8 s |
 | 9 | 1:17 | Plugin **Settings** tab. | The connected card: the design system's name, the repository, and "GitHub token: From the Bridge sign-in, on this computer only". No token value anywhere. Stop the recording. | 6 s |
 
 If you must cut, cut shot 9 first, then shot 8. Never cut shots 2, 6 and 7: they are the plugin working with Figma.
-Do not show anything the listing does not promise: no component drawing, no Claude, no component requests (they are
-hidden in this build anyway).
+Do not show anything the listing does not promise: no component, no Compare with code, no Claude, no component
+requests (they are hidden in this build anyway).
 
 ## After recording
 
@@ -86,7 +83,7 @@ already submitted.
 
 ```
 Hi, thank you for reviewing DS Bridge. Here is a short screen recording of the plugin in the Figma desktop app: [link]
-It connects to a public sample repository (github.com/acme-design-demo/bridge-demo-ds), pulls its design tokens into Figma Variables, lists the components the file is missing, then sends a variable edit back as a GitHub pull request, checked for contrast.
+It connects to a public sample repository (github.com/acme-design-demo/bridge-demo-ds), pulls its design tokens into Figma Variables, then sends a variable edit back as a GitHub pull request, checked for contrast.
 The plugin only calls api.github.com and our own site, bridgedesignsystem.com (sign-in, and merging token pull requests once their checks pass). It never shows the user's token, has no analytics and never calls an AI service.
 We have also updated the description so it says exactly what the plugin does today.
 Best regards, Florian

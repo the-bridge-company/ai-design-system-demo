@@ -2,19 +2,24 @@
 // /docs/figma-plugin/: the DS Bridge Figma plugin. First version: facts only from apps/figma-plugin/README.md.
 import Docs from '../../layouts/Docs.astro';
 import { Link } from '@bridge-ds/react';
+import { DOCS_AUTOMATIC_MEASURE } from '../../lib/nav';
 import { GITHUB_URL, PLUGIN_COMMUNITY_URL, PLUGIN_ZIP_URL } from '../../lib/repo';
 
 const sections = [
   { id: 'what', label: 'What it does' },
   { id: 'install', label: 'Install it' },
   { id: 'need', label: 'What you need' },
+  { id: 'privacy', label: 'Privacy and data' },
+  { id: 'next', label: 'Coming next' },
 ];
+// Support: the public issue tracker, the support contact of the Community listing (apps/figma-plugin/community/listing.md).
+const SUPPORT_URL = `${GITHUB_URL}/issues`;
 ---
 
-<Docs title="DS Bridge Figma plugin" description="What the DS Bridge Figma plugin does (your tokens both ways between GitHub and Figma Variables) and how to install it from Figma Community." sections={sections}>
+<Docs title="DS Bridge Figma plugin" description="What the DS Bridge Figma plugin does (your tokens, both ways) and how to install it from Figma Community." sections={sections}>
   <section aria-labelledby="what">
     <h2 id="what">What it does</h2>
-    <p>Your tokens sync both ways between your repository and Figma Variables. The repository stays the source of truth. It works on the free Figma plan, and nothing is written to main directly.</p>
+    <p>Your tokens sync both ways. The repository stays the source of truth. It works on the free Figma plan, and nothing is written to main directly.</p>
 
     <h3>Pull: tokens from code into Figma</h3>
     <p>Pull brings the latest tokens from the library into Figma Variables, one collection per tier with its modes, showing the plan before anything is written. Your own Figma edits are kept, and tokens changed on both sides show as conflicts for you to decide.</p>
@@ -22,7 +27,6 @@ const sections = [
     <h3>Push: your variable edits back for review</h3>
     <p>Push lists the variables you changed, with the contrast they move in every brand and theme. Blocking problems, such as a pair that fails contrast, disable the send.</p>
     <p>Your edits go to <strong>Send for review</strong> or to <strong>Try in an exploration</strong>. Depending on your repository, they become a pull request with a change table, contrast before and after, and the risk tier, or a suggestion for your design system lead. A pull request that only changes token values can ship once your checks pass; renamed or removed tokens wait for a developer.</p>
-
   </section>
 
   <section aria-labelledby="install">
@@ -43,5 +47,38 @@ const sections = [
     <p>A Bridge account in your team, the one you use in Studio. In the plugin, choose <strong>Sign in with Bridge</strong>: your browser opens Studio, you pick your team, and the plugin connects to your design system. No token to paste. When the sign-in expires, the plugin asks you to sign in again.</p>
     <p>The sign-in stays on this computer, never in the Figma file. GitHub only, no GitLab or Bitbucket.</p>
     <p>Developers can connect with their own fine-grained GitHub token instead, under <strong>For developers</strong> in the plugin's Settings.</p>
+  </section>
+
+  <section aria-labelledby="privacy">
+    <h2 id="privacy">Privacy and data</h2>
+    <p>The plugin talks to two sites, both declared in its manifest: <code>api.github.com</code>, for your team's own repository, and <code>bridgedesignsystem.com</code>, for Sign in with Bridge and for merging a token pull request you just opened. No analytics, no tracking, no AI service.</p>
+    <h3>What leaves Figma</h3>
+    <ul>
+      <li>To GitHub, your team's own repository: token values and names, the Figma file name, and the text you write.</li>
+      <li>To Bridge: your GitHub sign-in, the repository name and pull request numbers. Bridge uses the sign-in to ask GitHub who you are and what you can access, and does not keep it. During Sign in with Bridge, it is held encrypted on Bridge's side for at most 5 minutes, until the plugin collects it once.</li>
+    </ul>
+    <h3>What the plugin stores</h3>
+    <ul>
+      <li>On your computer, in the plugin's own storage: your GitHub sign-in or token, never in the Figma file and never shown again, and the GitHub login of the person who signed in.</li>
+      <li>In the Figma file: the repository, branch and tokens folder, so everyone in the file uses the same ones, the last pulled commit, markers on the variables the plugin manages, and each person's sync state, keyed by their Figma user id. That id stays in the file and is not sent anywhere.</li>
+    </ul>
+    <p>Questions or problems: open an issue on <Link href={SUPPORT_URL}>GitHub</Link>.</p>
+  </section>
+
+  <section aria-labelledby="next">
+    <h2 id="next">Coming next</h2>
+    <p>These are not in the version on Figma Community today.</p>
+    <dl class="dc-terms">
+      <dt>Pull components</dt>
+      <dd>Pull will build the coded components as component sets bound to your variables.</dd>
+      <dt>Push components</dt>
+      <dd>Each component change you make in Figma will become its own library change.</dd>
+      <dt>What is missing in your Figma</dt>
+      <dd>Pull will list the components from the code your file does not have yet. Your own components will count: they will be matched by name, so "Forms/Select" will be the code's Select.</dd>
+      <dt>Compare with code</dt>
+      <dd>Each variant will be compared with an image of it rendered from code, and marked Matches the code or Differs from the code.</dd>
+      <dt>Ask Claude to fix it</dt>
+      <dd>A component that differs will go to your team's Claude. It will need the <Link href={DOCS_AUTOMATIC_MEASURE}>automatic measure</Link> of your components, which a developer will turn on once.</dd>
+    </dl>
   </section>
 </Docs>

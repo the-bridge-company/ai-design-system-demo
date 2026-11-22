@@ -135,3 +135,12 @@ describe('BranchThumb, a component change without pictures', () => {
     }
   });
 });
+
+describe('BranchThumb, a new component from the visual impact run', () => {
+  it('shows its after picture alone when there is no before, never an empty image', () => {
+    const spec = { kind: 'image' as const, before: '', after: 'https://raw.githubusercontent.com/o/r/bridge-visual/pr-62/sha/after/x.png', label: 'Layout/ProfileHeader' };
+    const { container } = render(createElement(BranchThumb, { spec, size: 'card' }));
+    const imgs = [...container.querySelectorAll('img.bt-img')];
+    expect(imgs.map((i) => i.getAttribute('src'))).toEqual([spec.after]);
+  });
+});

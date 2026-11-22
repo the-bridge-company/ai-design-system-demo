@@ -4,6 +4,7 @@ import { baseBranchOf, protectedBranchesOf, type FetchLike } from '@bridge-ds/co
 import { isGitRepo, originRepo } from '@bridge-ds/core/node';
 import { CONFIG_FILE, detectConfig, parseConfig, type BridgeConfig } from './config.js';
 import { core, GitHubClient, GitHubError, type TokenSet } from './core-adapter.js';
+import type { SnapshotCache } from './snapshot-cache.js';
 import { GitHubSource, LocalSource, type RepoSource } from './source.js';
 
 export interface ContextOptions {
@@ -55,6 +56,13 @@ export interface ContextOptions {
    * on the request with Bridge's own app. Absent (a local server): a preview cannot be recorded.
    */
   behaviorPreview?: import('./behavior-preview.js').BehaviorPreviewHost;
+  /**
+   * Remote mode on the default branch: keep the repository's files across contexts of this process, by commit
+   * (snapshot-cache.ts). The hosted connector makes a context per MCP call; with this, an unchanged repository costs one
+   * live read (the branch's commit, with this context's own token and fetch) instead of the tree and every file again.
+   * Ignored when `ref` is set: a context on a named branch reads that branch as before.
+   */
+  snapshots?: SnapshotCache;
 }
 
 /** Whether a request only reads: GET and HEAD, and GraphQL queries (POST /graphql without a mutation). */
@@ -111,8 +119,14 @@ export class BridgeContext {
   static async create(opts: ContextOptions = {}): Promise<BridgeContext> {
     if (opts.repo) {
       const gh = client(opts.repo, opts, { protectedBranches: DEFAULT_PROTECTED, branchPrefix: 'bridge/' });
-      const ref = opts.ref ?? (await gh.getDefaultBranch());
-      const ctx = new BridgeContext('remote', new GitHubSource(gh, ref), opts);
+      const shared = opts.ref ? undefined : opts.snapshots;
+      let ref = opts.ref ?? shared?.defaultBranch(gh.fullName);
+      if (!ref) {
+        ref = await gh.getDefaultBranch();
+        shared?.rememberDefaultBranch(gh.fullName, ref);
+      }
+      const source = new GitHubSource(gh, ref, shared ? { cache: shared, onMissing: () => shared.forgetDefaultBranch(gh.fullName) } : undefined);
+      const ctx = new BridgeContext('remote', source, opts);
       ctx.gh = gh;
       return ctx;
     }

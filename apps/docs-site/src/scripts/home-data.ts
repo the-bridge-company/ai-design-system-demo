@@ -160,7 +160,8 @@ async function visualTop(n: number, sha: string): Promise<ThumbInput['visual']> 
     const m = JSON.parse((await ghGet<string>(`${base}/manifest.json`, { raw: true })).data) as VisualManifest;
     const st = visualState(m);
     const top = st.kind === 'changes' ? st.shots[0] : null;
-    return top?.images.before && top.images.after ? { before: `${base}/${top.images.before}`, after: `${base}/${top.images.after}`, label: top.label } : null;
+    // A new component's story has no before (status added): its after alone, never the icon.
+    return top?.images.after ? { before: top.images.before ? `${base}/${top.images.before}` : '', after: `${base}/${top.images.after}`, label: top.label } : null;
   } catch {
     return null;
   }

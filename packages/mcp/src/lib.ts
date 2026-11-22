@@ -13,6 +13,7 @@ export { createServer, SERVER_INFO, VERSION, type ServerOptions } from './server
 export { CONFIG_FILE, detectConfig, parseConfig, toConfigJson, type BridgeConfig } from './config.js';
 export { core } from './core-adapter.js';
 export { LocalSource, GitRefSource, GitHubSource, type RepoSource } from './source.js';
+export { SnapshotCache, sharedSnapshots, type SnapshotCacheOptions } from './snapshot-cache.js';
 export { auditSnippet } from './audit.js';
 export * as ops from './ops.js';
 export * as history from './history.js';

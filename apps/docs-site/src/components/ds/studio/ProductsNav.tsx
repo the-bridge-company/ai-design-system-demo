@@ -10,7 +10,8 @@
 import { useEffect, useState } from 'react';
 import { PanelsTopLeft } from 'lucide-react';
 import { PRODUCT_ICON } from './ProductMark';
-import { Skeleton, SidebarNavItem, SidebarNavSection } from '@bridge-ds/react';
+import { Badge, Skeleton, SidebarNavItem, SidebarNavSection } from '@bridge-ds/react';
+import { COMING_SOON } from '../../../lib/coming-soon';
 import { productsOf, type ProductConfig } from '@bridge-ds/core';
 import { productHref, productKeyFromPath } from '../../../lib/product-page';
 import { isSampleTeam } from '../../../lib/demo';
@@ -27,6 +28,8 @@ export interface NavPage {
   href: string;
   label: string;
   icon: IconName;
+  /** Not open yet (lib/nav.ts NavEntry.soon): drawn disabled with its tag, no link. */
+  soon?: boolean;
 }
 
 /** The All products page (pages/studio/products/index.astro). */
@@ -102,11 +105,21 @@ export function ProductsNavView({ products, current, path = '', pages = [], sign
         </SidebarNavSection>
       )}
       <SidebarNavSection title="Design system" className="rail-section rail-design-system" data-design-system-nav="">
-        {pages.map((p) => (
-          <SidebarNavItem key={p.href} href={studioHref(p.href)} icon={siteIcon(p.icon)} active={holds(p.href, path)} data-keep-branch="">
-            {p.label}
-          </SidebarNavItem>
-        ))}
+        {pages.map((p) =>
+          p.soon ? (
+            // No link: the row says the section is coming, nobody lands on an unfinished page.
+            <SidebarNavItem key={p.href} render={<span aria-disabled="true" />} icon={siteIcon(p.icon)} className="rail-soon">
+              {p.label}
+              <Badge tone="neutral" size="sm" className="nav-soon-tag">
+                {COMING_SOON}
+              </Badge>
+            </SidebarNavItem>
+          ) : (
+            <SidebarNavItem key={p.href} href={studioHref(p.href)} icon={siteIcon(p.icon)} active={holds(p.href, path)} data-keep-branch="">
+              {p.label}
+            </SidebarNavItem>
+          ),
+        )}
       </SidebarNavSection>
     </>
   );

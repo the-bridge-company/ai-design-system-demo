@@ -1,0 +1,167 @@
+/* /figma-plugin/ (pages/figma-plugin.astro), on top of styles/pricing.css (.pr type, the Harbor band, the hairline
+   list) and styles/homepage.css (the column, the step tabs). Mobile first; side by side from 900px like the rest of
+   the site. Tokens only; the dark theme comes from the tokens. */
+
+/* ---------- hero: centered, the title on two lines, the words, one action, then the two-way picture ---------- */
+.fp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  justify-items: center;
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-4);
+  text-align: center;
+}
+
+/* "Your tokens sync" on the first line, "both ways." under it; a phone wraps where it fits. */
+.fp-h1 {
+  margin-inline: auto;
+}
+
+@media (max-width: 699px) {
+  .fp-h1-br {
+    display: none;
+  }
+}
+
+.fp-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.fp-hero-side .pr-lead {
+  max-width: 52ch;
+}
+
+.fp-cta {
+  justify-content: center;
+  padding-top: 0;
+}
+
+/* A real screen: the plugin windows and the Studio page draw their own edges and shadow, so no second frame. */
+.fp-shot {
+  display: block;
+  margin: 0;
+}
+
+/* The two-way picture: transparent PNGs drawn for each theme (light and dark plates), the one matching data-theme
+   shows. Its plates sit a little inside the image: on wide screens it is pulled out by that inset so the Code card
+   lines up with the title. */
+.fp-hero-shot {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  margin: var(--space-4) 0 0;
+}
+
+.fp-hero-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fp-theme-dark,
+:root[data-theme="dark"] .fp-theme-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .fp-theme-dark {
+  display: block;
+}
+
+/* ---------- how it works: the screens inside the step panel ---------- */
+.fp-wide {
+  width: 100%;
+  height: auto;
+}
+
+/* The plugin window: the real UI captured at 2x, shown at its own width (480 px) so it stays sharp. Its edge is a
+   hairline and a radius drawn here, no shadow baked into the image. */
+.fp-window {
+  width: 100%;
+  max-width: var(--size-120);
+  margin: 0;
+  overflow: hidden;
+  background: var(--color-surface-default);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-overlay);
+}
+
+.fp-window img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The plugin window and the Studio page take the whole panel, not the drawings' column, so their text stays
+   readable. */
+.fp .hp-ui:has(.fp-wide, .fp-window),
+.fp .hp-sc:has(.fp-wide, .fp-window) {
+  max-width: none;
+}
+
+/* On a phone the whole window would shrink its text further: show its top (the banner and the first variables). */
+@media (max-width: 699px) {
+  .fp-window img {
+    aspect-ratio: 480 / 400;
+    object-fit: cover;
+    object-position: top;
+  }
+}
+
+/* ---------- the Harbor band: the way to Bridge ---------- */
+.fp-band-wrap {
+  padding-top: var(--space-20);
+}
+
+.fp-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+}
+
+.fp-band-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.fp-band-text .pr-h2 {
+  max-width: 22ch;
+}
+
+.fp-band-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  padding-top: var(--space-2);
+}
+
+/* On the Harbor zone the drawing's zone fills switch to paper so they stay visible (as .zone .ill in brand.css). */
+.fp-band-art [data-fill="zone"] {
+  fill: var(--color-surface-default);
+}
+
+.fp-band-art {
+  justify-self: center;
+  width: min(100%, var(--size-80));
+  height: auto;
+}
+
+@media (min-width: 900px) {
+  .fp-hero {
+    padding-top: var(--space-20);
+  }
+
+  .fp-hero-shot {
+    margin: var(--space-8) calc(var(--space-3) * -1) 0;
+  }
+
+  .fp-band {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-12);
+  }
+}

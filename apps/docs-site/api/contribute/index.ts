@@ -216,7 +216,7 @@ import { PREVIEW_KINDS, PREVIEW_WORDS, previewBlocksOf, previewCommentOf, previe
 import { askCommentOf, BEHAVIOR_DECISION_WORDS, BEHAVIOR_DECISIONS, BEHAVIOR_TEXT_MAX, behaviorIssueProblem, BUILD_REQUEST_LABEL as BUILD_LABEL_SERVER, declineCommentOf, decisionTextProblem, defaultCommentOf, requesterLoginOf, type BehaviorDecisionKind } from '../_lib/behavior-decision.js';
 import { canonicalRepo } from '../../src/lib/team-path.js';
 import { mintReadPass, passOpens, verifyReadPass, type ReadPass } from '../_lib/read-pass.js';
-import { budgetOf, corsHeaders, isPublicRepo, originAllowed, productReadAllowed, teamReadConfigOf, noteWrite, onBlobs, onChanges, onRead, onUsers, parseBlobList, profileNameOf, parseChangeList, parseUserList, isPublicTeam, openToVisitors, READ_BASE, READ_PERMISSIONS, readAllowed, READ_WORDS, STALE_KEEP_S, type ReadCtx, type Reader } from '../_lib/team-read.js';
+import { budgetOf, corsHeaders, isPublicRepo, MAX_READS, originAllowed, productReadAllowed, teamReadConfigOf, noteWrite, onBlobs, onChanges, onRead, onReads, onUsers, type BatchRead, parseBlobList, profileNameOf, parseChangeList, parseUserList, isPublicTeam, openToVisitors, READ_BASE, READ_PERMISSIONS, readAllowed, READ_WORDS, STALE_KEEP_S, type ReadCtx, type Reader } from '../_lib/team-read.js';
 
 export type { FetchLike };
 
@@ -3478,6 +3478,7 @@ async function onTeamRead(req: Request, ctx: Ctx, params: URLSearchParams): Prom
   const usersArg = params.get('users');
   const changesArg = params.get('changes');
   // The path is checked before anyone is looked up: a bad address costs no storage call.
+  if (params.has('read')) return onBatchRead(req, ctx, params);
   const logins = usersArg !== null ? parseUserList(usersArg) : null;
   const changes = changesArg !== null && !logins ? parseChangeList(changesArg) : null;
   const any = blobs === null && !logins && !changes ? parseAnyTarget(params.get('gh')) : null;
@@ -3513,6 +3514,34 @@ async function onTeamRead(req: Request, ctx: Ctx, params: URLSearchParams): Prom
     return onRead(req, rctx, { owner: product.owner, repo: product.repo, full, rest: target!.rest, rawRest: target!.rawRest, query: target!.query }, reader);
   }
   return onRead(req, rctx, { owner, repo, full, rest: target!.rest, rawRest: target!.rawRest, query: target!.query }, reader);
+}
+
+/**
+ * GET ?repo=<team>&read=<[accept ]path>&read=... (api/_lib/team-read.ts onReads): the reads of one moment of a page in
+ * one request, same origin only. Every path is checked as gh= is before anyone is looked up (one bad path refuses the
+ * batch: the page never builds one), the reader once, then each read through the same policy and cache.
+ */
+async function onBatchRead(req: Request, ctx: Ctx, params: URLSearchParams): Promise<Response> {
+  const { owner, repo, full } = parseRepo(params.get('repo'));
+  const rctx = readCtxOf(ctx);
+  const raw = params.getAll('read');
+  if (!raw.length || raw.length > MAX_READS) throw new HttpError(400, 'bad_request', `Ask for 1 to ${MAX_READS} reads.`);
+  const reads: BatchRead[] = raw.map((v) => {
+    const sp = v.startsWith('/') ? -1 : v.indexOf(' ');
+    const accept = sp < 0 ? '' : v.slice(0, sp);
+    const any = parseAnyTarget(sp < 0 ? v : v.slice(sp + 1));
+    const own = any.owner.toLowerCase() === owner.toLowerCase() && any.repo.toLowerCase() === repo.toLowerCase();
+    const product = own ? null : { owner: any.owner, repo: any.repo };
+    if (!readAllowed(any.rest, { kind: product ? 'guest' : 'member' })) throw new HttpError(403, 'not-allowed', READ_WORDS.notAllowed);
+    // The team's budget and write marks; a product's own token and cache entries (the URL names its repository).
+    return { t: { owner: any.owner, repo: any.repo, full, rest: any.rest, rawRest: any.rawRest, query: any.query }, accept, product };
+  });
+  const reader = await readerOf(ctx, req, full, rctx);
+  if (!reader) {
+    const stale = readCookie(req, cookieName(full)) !== null;
+    return json(401, { error: 'signin', message: SIGNIN }, stale ? { 'Set-Cookie': clearSession(full) } : {});
+  }
+  return onReads(req, rctx, full, reads, reader, (product) => productReadAllowed(rctx, { owner, repo }, product, reader, notAllowed));
 }
 
 /**
@@ -3858,8 +3887,10 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
     const blobs = params.get('blobs');
     const users = params.get('users');
     const changes = params.get('changes');
-    // Another origin reads one thing: gh= or blobs=, nothing else (no member facts, no people, no change status).
-    if (cross && ((gh === null) === (blobs === null) || users !== null || changes !== null)) throw new HttpError(403, 'origin', CROSS_ORIGIN);
+    // A batch of reads (read=...&read=...): reads only, like gh=.
+    const batch = params.has('read');
+    // Another origin reads one thing: gh= or blobs=, nothing else (no member facts, no people, no change status, no batch).
+    if (cross && ((gh === null) === (blobs === null) || users !== null || changes !== null || batch)) throw new HttpError(403, 'origin', CROSS_ORIGIN);
 
     // The latest published version of library packages (the product page's library line): public, kept a few minutes.
     if (method === 'GET' && params.get('npm') !== null && gh === null && blobs === null) {
@@ -3867,7 +3898,7 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
     }
     if (method === 'GET' && (params.get('reach') === 'summary' || params.get('reach') === 'image') && svc && !cross) return await onReach(req, { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env }, params, shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots));
     if (method === 'GET' && params.get('shot') !== null && svc && !cross) return await onShot(req, { f: deps.fetch, now: deps.now ?? Date.now, random: deps.random ?? ((n) => randomBytes(n)), svc, env }, params, shotStoreOf(env.BLOB_READ_WRITE_TOKEN, deps.shots));
-    if (method === 'GET' && gh === null && blobs === null && users === null && changes === null) {
+    if (method === 'GET' && gh === null && blobs === null && users === null && changes === null && !batch) {
       const repoArg = params.get('repo');
       if (repoArg === null || !svc) {
         if (repoArg !== null) parseRepo(repoArg);
@@ -3915,7 +3946,7 @@ async function contribute(req: Request, env: ContribEnv, deps: ContribDeps, cros
       const refused = await demoWriteRefusal(ctx, req, params);
       if (refused) return refused;
     }
-    if (gh !== null || ((blobs !== null || users !== null || changes !== null) && method === 'GET')) return await onProxy(req, ctx, params);
+    if (gh !== null || ((blobs !== null || users !== null || changes !== null || batch) && method === 'GET')) return await onProxy(req, ctx, params);
     if (method !== 'POST') return fail(400, 'bad_request', 'Say which GitHub call, with gh.');
     return await onAction(req, ctx);
   } catch (e) {

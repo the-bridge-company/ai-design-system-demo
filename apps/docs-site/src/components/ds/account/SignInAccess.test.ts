@@ -78,6 +78,12 @@ describe('sign-in, Bridge on invitation', () => {
     expect(navigate.to).not.toHaveBeenCalled();
     await waitFor(() => expect(document.activeElement?.id).toBe('acc-title'));
     await expectNoAxeViolations(container);
+    // Use another email: back to the email step, empty and focused.
+    await user.click(screen.getByRole('button', { name: 'Use another email' }));
+    const field = await screen.findByRole('textbox', { name: 'Work email' });
+    expect(field).toHaveValue('');
+    await waitFor(() => expect(field).toHaveFocus());
+    expect(screen.queryByRole('heading', { name: 'Bridge opens in small groups' })).toBeNull();
   });
 
   it('says who invited on an access link, sends its token with the code, then forgets it', async () => {

@@ -616,6 +616,19 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
           : startHeader;
 
   /** Bridge opens in small groups: the refusal, or an access link that no longer works. One primary, the demo beside. */
+  /** "Use another email": back to an empty email step; the refusal and a spent link are forgotten. */
+  const anotherEmail = () => {
+    setRefused(null);
+    setAccessInfo(null);
+    setEmail('');
+    setCode('');
+    setError(null);
+    setAlert(null);
+    verified.current = false;
+    rejected.current = null;
+    setStep('start');
+  };
+
   const closedPanel = (title: string, text: string, href: string) => (
     <SignInPage
       foot={
@@ -633,6 +646,11 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
           <ButtonLink href={DEMO_HOME} variant="secondary" fullWidth>
             {GW.demo}
           </ButtonLink>
+          <p className="acc-quiet">
+            <Button variant="link" size="sm" onClick={anotherEmail}>
+              {GW.anotherEmail}
+            </Button>
+          </p>
         </div>
       </section>
     </SignInPage>

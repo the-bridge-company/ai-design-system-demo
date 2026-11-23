@@ -31,7 +31,7 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('access queue', () => {
-  it('says how many wait and how many places are left, one row per request with its two actions', async () => {
+  it('says how many wait and how many places are left, one row per request with its two actions, one primary', async () => {
     const { container } = render(createElement(AccessAdmin));
     expect(await screen.findByText('2 requests waiting · 4 of 5 places left this week')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'Access requests' })).toBeInTheDocument();
@@ -46,6 +46,9 @@ describe('access queue', () => {
     expect(first.getByRole('button', { name: 'Invite' }).className).toMatch(/primary/);
     expect(first.getByRole('button', { name: 'Not yet' }).className).toMatch(/secondary/);
     expect(within(rows[1] as HTMLElement).getByText('No design system link')).toBeInTheDocument();
+    // One primary action on the page: Invite on the first request waiting only.
+    expect(within(rows[1] as HTMLElement).getByRole('button', { name: 'Invite' }).className).toMatch(/secondary/);
+    expect(container.querySelectorAll('button[class*="primary"]')).toHaveLength(1);
     expect(screen.queryByRole('alert')).toBeNull();
     await expectNoAxeViolations(container);
   });

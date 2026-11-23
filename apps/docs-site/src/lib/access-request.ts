@@ -170,6 +170,7 @@ export const GATE_WORDS = {
   text: 'Request access with this email and we reply within 2 working days. The demo is open meanwhile.',
   request: 'Request access',
   demo: 'Open the demo',
+  anotherEmail: 'Use another email',
   /** "Florian invited you to Bridge" */
   linkTitle: (inviter: string) => `${inviter || 'Florian'} invited you to Bridge`,
   linkLead: 'Sign in with your work email to start.',

@@ -17,6 +17,7 @@ import {
   ACCESS_STORE_KEY,
   ACCESS_WORDS as W,
   accessDay,
+  foundingRequest,
   checkAccessRequest,
   emailFromQuery,
   parseRemembered,
@@ -168,6 +169,7 @@ export default function RequestAccess() {
             {W.sentLead[1]}
             <strong className="ent-strong">{sent.email}</strong>
             {W.sentLead[2]}
+            {foundingRequest(sent.at) && <> {W.foundingSaved}</>}
           </>,
         )}
         {demoAndChange}
@@ -182,6 +184,7 @@ export default function RequestAccess() {
             {W.pendingLead[0]}
             <strong className="ent-strong">{sent.email}</strong>
             {W.pendingLead[1]}
+            {foundingRequest(sent.at) && <> {W.foundingSaved}</>}
           </>,
         )}
         <Stepper

@@ -11,7 +11,7 @@ const c = (key: string) => styles[key] as string;
 
 const strip = (props: Partial<Parameters<typeof AnnouncementStrip>[0]> = {}) => (
   <AnnouncementStrip label="Founding teams" icon={CalendarCheck} action={<Link href="/pricing/#founding">Read the commitment</Link>} {...props}>
-    Paid plans open in 2027. Teams created by 31 March 2027 stay <strong>FREE</strong>, with no end date.
+    Paid plans open in 2027. Teams that request access by 31 March 2027 stay <strong>FREE</strong>, with no end date.
   </AnnouncementStrip>
 );
 
@@ -19,7 +19,7 @@ describe('AnnouncementStrip', () => {
   it('is a complementary landmark named by its label, with the message and one link reached by Tab', async () => {
     render(strip());
     const region = screen.getByRole('complementary', { name: 'Founding teams' });
-    expect(region).toHaveTextContent('Paid plans open in 2027. Teams created by 31 March 2027 stay FREE, with no end date.');
+    expect(region).toHaveTextContent('Paid plans open in 2027. Teams that request access by 31 March 2027 stay FREE, with no end date.');
     expect(region.querySelector('strong')).toHaveTextContent('FREE');
     expect(region.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
     await userEvent.tab();
@@ -54,13 +54,13 @@ describe('AnnouncementStrip', () => {
   it('with href, the whole strip is one link whose text is the message, and no separate action shows', async () => {
     const { container } = render(
       <AnnouncementStrip label="Founding teams" icon={CalendarCheck} href="/pricing/#founding" action={<Link href="/x">Read the commitment</Link>}>
-        Teams created by 31 March 2027 stay <strong>FREE</strong>.
+        Teams that request access by 31 March 2027 stay <strong>FREE</strong>.
       </AnnouncementStrip>,
     );
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAttribute('href', '/pricing/#founding');
-    expect(links[0]).toHaveTextContent('Teams created by 31 March 2027 stay FREE.');
+    expect(links[0]).toHaveTextContent('Teams that request access by 31 March 2027 stay FREE.');
     expect(screen.getByRole('complementary', { name: 'Founding teams' })).toContainElement(links[0]!);
     await expectNoAxeViolations(container);
   });

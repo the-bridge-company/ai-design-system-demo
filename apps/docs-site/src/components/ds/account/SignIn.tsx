@@ -40,7 +40,7 @@ import { loadRecentTeams, loadTeamNames, loadTeamRoles } from '../../../lib/rece
 import { continueAs, readLastEmail, rememberEmail, type ContinueAs } from '../../../lib/signin-continue';
 import { useFace } from './AccountMenu';
 import { DEMO_HOME, START_PAGE } from '../../../lib/start';
-import { ACCESS_LINK_KEY, accessTokenFromQuery, emailFromQuery, GATE_WORDS as GW, REQUEST_PAGE, type AccessLinkInfo } from '../../../lib/access-request';
+import { ACCESS_LINK_KEY, accessTokenFromQuery, emailFromQuery, foundingOpen, GATE_WORDS as GW, REQUEST_PAGE, type AccessLinkInfo } from '../../../lib/access-request';
 import '../../../styles/account.css';
 
 /** Tests replace it. */
@@ -620,7 +620,7 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
           ),
         }
       : accessInfo?.valid
-        ? { title: GW.linkTitle, lead: GW.linkLead(accessInfo.label, accessInfo.inviter) }
+        ? { title: GW.linkTitle, lead: foundingOpen(Date.now()) ? `${GW.linkLead(accessInfo.label, accessInfo.inviter)} ${GW.linkFounding}` : GW.linkLead(accessInfo.label, accessInfo.inviter) }
         : { title: W.signInTitle, lead: W.signInLead };
   const top =
     step === 'code'

@@ -28,7 +28,7 @@ export interface AnnouncementStripProps extends Omit<HTMLAttributes<HTMLElement>
 
 /**
  * A quiet strip across the top of every page of a site, above its header: a lasting, site-wide fact the reader should
- * know wherever they land ("Teams created by 31 March 2027 stay free"). One line, centred, full bleed, not dismissible,
+ * know wherever they land ("Teams that request access by 31 March 2027 stay free"). One line, centred, full bleed, not dismissible,
  * no urgency. A complementary landmark named by `label`, not a live region. For a mode the page is in, use Banner; for
  * a message about the page's content, use Alert.
  */

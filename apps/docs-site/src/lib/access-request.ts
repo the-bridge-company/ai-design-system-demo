@@ -5,6 +5,7 @@
 
 import { SAMPLE_REPO } from './demo.js';
 import { STUDIO_ROOT } from './team-path.js';
+import { FOUNDING_CUTOFF, FOUNDING_DATE } from './pricing.js';
 
 /** The request page (the landing, pricing and the demo lead here). */
 export const REQUEST_PAGE = '/request/';
@@ -42,6 +43,8 @@ export const ACCESS_WORDS = {
   pendingTitle: 'Your request is waiting for review',
   /** "We reply to ana@acme.com within 2 working days." */
   pendingLead: ['We reply to ', ' within 2 working days.'] as const,
+  /** After the lead, for a request sent by the founding cutoff (terms 10.1, foundingRequest). */
+  foundingSaved: 'Your founding place is saved.',
   steps: 'Your request',
   stepSent: 'Sent',
   stepReviewed: 'Reviewed',
@@ -107,6 +110,25 @@ export function accessDay(iso: string): string {
   if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d);
 }
+
+/** The Paris calendar day of an ISO time, YYYY-MM-DD; '' for anything else. */
+export function parisDay(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Paris' }).format(d);
+}
+
+/**
+ * A request sent up to the founding cutoff, included (Paris day, terms 10.1): it reserves a founding place, kept if
+ * the invite is accepted within 30 days (ACCESS_APPROVAL_MS).
+ */
+export const foundingRequest = (at: string): boolean => {
+  const day = parisDay(at);
+  return Boolean(day) && day <= FOUNDING_CUTOFF;
+};
+
+/** Today (`now`, ms) is still on or before the founding cutoff, Paris day: an invite link opened now can found a team. */
+export const foundingOpen = (now: number): boolean => foundingRequest(new Date(now).toISOString());
 
 export interface RememberedRequest {
   email: string;
@@ -176,6 +198,8 @@ export const GATE_WORDS = {
   /** "Hi Enginy, Florian opened early access to Bridge for you. Sign in with your work email to start." */
   linkLead: (label: string, inviter: string) =>
     `${label.trim() ? `Hi ${label.trim()},` : 'Hi,'} ${inviter.trim() || 'Florian'} opened early access to Bridge for you. Sign in with your work email to start.`,
+  /** After linkLead while foundingOpen (terms 10.1 (c)); nothing after the cutoff. */
+  linkFounding: `Join by ${FOUNDING_DATE} and your team stays free, with no end date.`,
   /** Signed in already on this browser: an existing account needs no link (none of its uses is taken). */
   linkSignedIn: (name: string) => `You are signed in as ${name}. Continue with this account or use another one.`,
   /** Signed in already, and the link expired, ran out or was revoked. */

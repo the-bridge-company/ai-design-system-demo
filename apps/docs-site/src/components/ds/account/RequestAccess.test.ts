@@ -80,7 +80,7 @@ describe('Request access', () => {
     await user.keyboard('{Enter}');
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Request received.' })).toBeInTheDocument());
     expect(sent).toEqual([{ email: 'ana@acme.com', company: 'Acme', where: '', fix: 'Our tokens drift from Figma' }]);
-    expect(screen.getByRole('heading', { level: 1 }).parentElement!.textContent).toContain('Sent on 23 November 2026. We reply to ana@acme.com within 2 working days, with an invite link.');
+    expect(screen.getByRole('heading', { level: 1 }).parentElement!.textContent).toContain('Sent on 23 November 2026. We reply to ana@acme.com within 2 working days, with an invite link. Your founding place is saved.');
     expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
     expect(screen.getByRole('link', { name: 'Continue the demo' })).toHaveAttribute('href', '/studio/acme-design-demo/bridge-demo-ds/');
     expect(screen.getByText(/Wrong email\?/)).toBeInTheDocument();
@@ -99,10 +99,17 @@ describe('Request access', () => {
     const steps = screen.getByRole('list', { name: 'Your request' });
     expect(steps.querySelectorAll('li')).toHaveLength(3);
     expect(steps.textContent).toContain('20 November 2026');
+    expect(screen.getByRole('heading', { level: 1 }).parentElement!.textContent).toContain('We reply to ana@acme.com within 2 working days. Your founding place is saved.');
     expect(steps.querySelector('[aria-current="step"]')!.textContent).toContain('Reviewed');
     expect(screen.getByRole('link', { name: 'Continue the demo' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Change my request' })).toBeInTheDocument();
     await expectNoAxeViolations(container);
+  });
+
+  it('promises no founding place for a request sent after 31 March 2027', () => {
+    localStorage.setItem(ACCESS_STORE_KEY, JSON.stringify({ email: 'ana@acme.com', at: '2027-04-02T09:00:00.000Z' }));
+    render(createElement(RequestAccess));
+    expect(screen.getByRole('heading', { level: 1 }).parentElement!.textContent).not.toMatch(/founding/i);
   });
 
   it('opens the form when the address asks for another email than the one remembered', () => {

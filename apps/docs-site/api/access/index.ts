@@ -74,6 +74,7 @@ import {
   ADMIN_WORDS,
   SIGNIN_PATH as SIGNIN_PAGE,
   checkAccessRequest,
+  foundingRequest,
   invitedThisWeek,
   linkStateOf,
   oneLine,
@@ -170,7 +171,7 @@ async function onRequest(req: Request, env: AccessEnv, deps: AccessDeps, redis: 
     const origin = siteOrigin(req, env.PUBLIC_SITE_URL);
     const demo = `${origin}${ACCESS_DEMO}`;
     const review = reviewHref(origin, email);
-    const mails = [accessConfirmationEmail({ to: input.email, demo, replyTo: CONTACT_EMAIL }), ...adminEmails(env.BRIDGE_ADMIN_EMAILS).map((to) => accessNoticeEmail({ to, request, again: Boolean(before), review }))];
+    const mails = [accessConfirmationEmail({ to: input.email, demo, at, replyTo: CONTACT_EMAIL }), ...adminEmails(env.BRIDGE_ADMIN_EMAILS).map((to) => accessNoticeEmail({ to, request, again: Boolean(before), review }))];
     const sent = await Promise.allSettled(mails.map((m) => sender.send(m)));
     sent.forEach((s, i) => {
       if (s.status === 'rejected') warn(`access: ${i === 0 ? 'confirmation' : 'notice'} email not sent (${s.reason instanceof Error ? s.reason.message : 'unknown'})`);
@@ -253,7 +254,7 @@ async function onAdmin(req: Request, env: AccessEnv, deps: AccessDeps, redis: Re
       const { declinedAt: _d, note: _n, ...rest } = before;
       request = { ...rest, status: 'invited', approvedAt: new Date(now).toISOString(), approvedVia: 'queue' };
       await redis.cmd('SET', key, JSON.stringify(request));
-      const mail = accessInvitedEmail({ to: before.email, signIn: `${origin}${SIGNIN_PAGE}?email=${encodeURIComponent(before.email)}`, replyTo: CONTACT_EMAIL });
+      const mail = accessInvitedEmail({ to: before.email, signIn: `${origin}${SIGNIN_PAGE}?email=${encodeURIComponent(before.email)}`, founding: foundingRequest(before.at), replyTo: CONTACT_EMAIL });
       if (sender) await sender.send(mail).catch((e: unknown) => warn(`access: invited email not sent (${e instanceof Error ? e.message : 'unknown'})`));
       else warn('access: RESEND_API_KEY or INVITE_EMAIL_FROM is not set, no email sent');
       return json(200, { request, week: weekOf(env, await allRequests(redis), now) });

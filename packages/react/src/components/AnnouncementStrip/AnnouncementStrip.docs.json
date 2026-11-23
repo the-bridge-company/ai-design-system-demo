@@ -1,6 +1,6 @@
 {
   "summary": "A quiet strip across the top of every page of a site, above its header: one lasting, site-wide fact the reader should know wherever they land, with at most one link to learn more.",
-  "preview": { "c": "AnnouncementStrip", "p": { "label": "Founding teams", "icon": "CalendarCheck" }, "children": ["Paid plans open in 2027. Teams created by 31 March 2027 stay free, with no end date."] },
+  "preview": { "c": "AnnouncementStrip", "p": { "label": "Founding teams", "icon": "CalendarCheck" }, "children": ["Paid plans open in 2027. Teams that request access by 31 March 2027 stay free, with no end date."] },
   "whenToUse": [
     "A fact that holds across the whole site for weeks or months and matters wherever a reader lands: a pricing commitment, a change of terms, a planned shutdown date.",
     "Above the site header, full bleed, on marketing and documentation pages. One per site.",
@@ -18,7 +18,7 @@
     {
       "title": "State the fact and the date",
       "text": "One or two short sentences a reader can repeat: what is true, and until when.",
-      "example": { "c": "AnnouncementStrip", "p": { "label": "Founding teams", "icon": "CalendarCheck" }, "children": ["Paid plans open in 2027. Teams created by 31 March 2027 stay free, with no end date."] }
+      "example": { "c": "AnnouncementStrip", "p": { "label": "Founding teams", "icon": "CalendarCheck" }, "children": ["Paid plans open in 2027. Teams that request access by 31 March 2027 stay free, with no end date."] }
     },
     {
       "title": "Neutral under a Harbor page header",
@@ -35,7 +35,7 @@
     {
       "title": "A Button in the strip",
       "text": "The strip links to where the fact is explained. An action that changes something belongs on that page.",
-      "example": { "c": "AnnouncementStrip", "p": { "label": "Founding teams" }, "children": ["Teams created by 31 March 2027 stay free."] }
+      "example": { "c": "AnnouncementStrip", "p": { "label": "Founding teams" }, "children": ["Teams that request access by 31 March 2027 stay free."] }
     }
   ],
   "accessibility": [

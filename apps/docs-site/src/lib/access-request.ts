@@ -171,9 +171,15 @@ export const GATE_WORDS = {
   request: 'Request access',
   demo: 'Open the demo',
   anotherEmail: 'Use another email',
-  /** "Florian invited you to Bridge" */
-  linkTitle: (inviter: string) => `${inviter || 'Florian'} invited you to Bridge`,
-  linkLead: 'Sign in with your work email to start.',
+  /** The sign-in screen opened from a live access link (signed out, or signed in already). */
+  linkTitle: "You're invited to the Bridge beta",
+  /** "Hi Enginy, Florian opened early access to Bridge for you. Sign in with your work email to start." */
+  linkLead: (label: string, inviter: string) =>
+    `${label.trim() ? `Hi ${label.trim()},` : 'Hi,'} ${inviter.trim() || 'Florian'} opened early access to Bridge for you. Sign in with your work email to start.`,
+  /** Signed in already on this browser: an existing account needs no link (none of its uses is taken). */
+  linkSignedIn: (name: string) => `You are signed in as ${name}. Continue with this account or use another one.`,
+  /** Signed in already, and the link expired, ran out or was revoked. */
+  linkGoneSignedIn: 'This invite link is no longer valid. You can still continue with your account.',
   linkGone: 'This invite link has expired. Request access and we will review it first.',
   linkGoneTitle: 'Bridge opens in small groups',
 } as const;
@@ -232,8 +238,72 @@ export interface AdminLink {
   state: AccessLinkState;
 }
 
+/** A team role as People shows it: an email member's role, or what GitHub said (admin or edit). */
+export type PeopleRole = 'view' | 'edit' | 'admin';
+
+/** One account on People (api/access `people`). Never a session, a code or a hash. */
+export interface PeopleAccount {
+  name: string;
+  email: string;
+  /** The linked GitHub login, else null (the account signs in with email codes). */
+  github: string | null;
+  /** ISO, null when the record has none. */
+  createdAt: string | null;
+  teams: { name: string; role: PeopleRole; via: 'email' | 'github' }[];
+}
+
+export interface PeopleTeam {
+  name: string;
+  /** owner/repo, null for a team made in Bridge with no repository yet. */
+  repo: string | null;
+  members: number;
+  /** ISO for a team made in Bridge, else null (a repository team keeps no date). */
+  createdAt: string | null;
+}
+
+export interface PeopleList {
+  accounts: PeopleAccount[];
+  teams: PeopleTeam[];
+  /** Every account in storage; `accounts` stops at 2000 (`truncated`). */
+  total: number;
+  truncated: boolean;
+  /** Accounts made in the last 7 days. */
+  joinedWeek: number;
+}
+
+/** The query parameter of the founder's notice email: the request to show first (its email). */
+export const REQUEST_PARAM = 'request';
+
+/** The queue with one request in view: the founder's notice email links here. */
+export const reviewHref = (origin: string, email: string): string => `${origin}${ACCESS_ADMIN_PAGE}?${REQUEST_PARAM}=${encodeURIComponent(email)}`;
+
 export const ADMIN_WORDS = {
-  title: 'Access requests',
+  title: 'Access',
+  tabRequests: 'Requests',
+  tabLinks: 'Invite links',
+  tabPeople: 'People',
+  requestGone: 'The request from this email link is no longer in the queue.',
+  /** "12 accounts · 3 teams · 2 joined in the last 7 days" */
+  peopleSummary: (n: number, t: number, k: number) => `${n} ${n === 1 ? 'account' : 'accounts'} · ${t} ${t === 1 ? 'team' : 'teams'} · ${k} joined in the last 7 days`,
+  peopleTruncated: (shown: number, total: number) => `Showing the first ${shown} of ${total} accounts.`,
+  accountsTitle: 'Accounts',
+  teamsTitle: 'Teams',
+  colName: 'Name',
+  colEmail: 'Email',
+  colSignIn: 'Signs in with',
+  colCreated: 'Created',
+  colTeams: 'Teams',
+  colRepo: 'Repository',
+  colMembers: 'Members',
+  viaGithub: (login: string) => `GitHub (${login})`,
+  viaEmail: 'Email code',
+  unknown: 'Unknown',
+  noTeams: 'None',
+  noRepo: 'No repository yet',
+  role: { admin: 'Admin', edit: 'Can edit', view: 'Can view' } as const,
+  noPeople: 'No accounts yet.',
+  noTeamRows: 'No teams yet.',
+  peopleFailed: 'Bridge could not load the people. Try again in a minute.',
   /** "3 requests waiting · 2 of 5 places left this week" */
   summary: (waiting: number, left: number, cap: number) => `${waiting} ${waiting === 1 ? 'request' : 'requests'} waiting · ${left} of ${cap} places left this week`,
   overCap: (cap: number) => `This week's ${cap} places are taken. You can still invite: it is your call.`,

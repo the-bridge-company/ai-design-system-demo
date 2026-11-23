@@ -161,6 +161,8 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
   /** The access link this screen opened from (?access=), and what the server said it is. */
   const access = useRef<string | null>(null);
   const [accessInfo, setAccessInfo] = useState<AccessLinkInfo | null>(null);
+  /** Signed in already on an access link that no longer works: said on the Continue screen, Continue still works. */
+  const [accessGone, setAccessGone] = useState(false);
   /** Bridge opens on invitation and this new email has no access yet: where to request it. */
   const [refused, setRefused] = useState<string | null>(null);
   const codeField = useRef<HTMLInputElement>(null);
@@ -368,8 +370,22 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
       }
       if (info.account) {
         setEmail(info.account.email);
+        // Signed in already on an access link: the Continue screen says so (live) or that it no longer works. The
+        // account needs no link, so none of its uses is taken; Use another account keeps a live one for the new sign-in.
+        let onLink = false;
+        if (access.current) {
+          onLink = true;
+          const read = await api.readAccessLink(access.current);
+          if (!live) return;
+          if (read?.valid) setAccessInfo(read);
+          else {
+            access.current = null;
+            forgetAccessToken();
+            setAccessGone(true);
+          }
+        }
         // From inside Bridge (?next=): straight on. From the site: Continue as them, or another account.
-        if (next) return go({ account: info.account, created: false, next: '' }, false);
+        if (next && !onLink) return go({ account: info.account, created: false, next: '' }, false);
         setAlready(continueAs({ account: info.account, recent: loadRecentTeams(), teamNames: loadTeamNames(), teamRoles: loadTeamRoles() }));
         return setStep('continue');
       }
@@ -604,7 +620,7 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
           ),
         }
       : accessInfo?.valid
-        ? { title: GW.linkTitle(accessInfo.inviter), lead: GW.linkLead }
+        ? { title: GW.linkTitle, lead: GW.linkLead(accessInfo.label, accessInfo.inviter) }
         : { title: W.signInTitle, lead: W.signInLead };
   const top =
     step === 'code'
@@ -663,7 +679,14 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
     return (
       <SignInPage>
         <section className="acc" aria-labelledby="acc-title">
-          {header({ title: W.welcomeBack, lead: W.welcomeBackLead })}
+          {accessInfo?.valid
+            ? header({ title: GW.linkTitle, lead: GW.linkSignedIn(already.name) })
+            : header({ title: W.welcomeBack, lead: W.welcomeBackLead })}
+          {accessGone && (
+            <Alert tone="info" className="acc-alert">
+              {GW.linkGoneSignedIn}
+            </Alert>
+          )}
           <div className="acc-ways acc-continue">
             <div className="acc-who">
               <Avatar name={already.name} src={face ?? already.avatar ?? undefined} size="lg" decorative />
@@ -672,7 +695,20 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
                 {already.detail && <span className="t-meta t-muted">{already.detail}</span>}
               </span>
             </div>
-            <Button variant="primary" size="lg" className="acc-wide" onClick={() => (me ? go({ account: me, created: false, next: '' }, false) : leave(already.href))}>
+            <Button
+              variant="primary"
+              size="lg"
+              className="acc-wide"
+              onClick={() => {
+                // An existing account goes on without the access link: it is forgotten here, never used.
+                if (access.current) {
+                  access.current = null;
+                  forgetAccessToken();
+                }
+                if (me) go({ account: me, created: false, next: '' }, false);
+                else leave(already.href);
+              }}
+            >
               {W.continueAs}
             </Button>
             <Button

@@ -252,7 +252,7 @@ describe("the founder's queue", () => {
     expect(nobody.status).toBe(401);
     expect(await nobody.json()).toMatchObject({ error: 'signin', signIn: '/signin/?next=%2Fadmin%2Faccess%2F' });
     const other = cookieOf(await signUp(s, OFF, 'someone@acme.example'));
-    for (const action of ['list', 'invite', 'not-yet', 'create-link', 'revoke-link']) {
+    for (const action of ['list', 'invite', 'not-yet', 'create-link', 'revoke-link', 'people']) {
       const r = await handleAccess(access({ action, email: 'x@acme.example', label: 'x', id: 'a'.repeat(64) }, { cookie: other }), ON, s.accessDeps);
       expect(r.status).toBe(403);
       expect((await r.json()).error).toBe('not_admin');
@@ -341,6 +341,52 @@ describe("the founder's queue", () => {
     expect(await s.redis.cmd('ZCARD', ACCESS_LINKS_KEY)).toBe(0);
     expect((await handleAccess(access({ action: 'revoke-link', id: 'nope' }, { cookie }), ON, s.accessDeps)).status).toBe(400);
     expect(await s.redis.cmd('ZCARD', ACCESS_QUEUE_KEY)).toBe(0);
+  });
+});
+
+describe("the founder's People", () => {
+  it('refuses without a session and for anyone not a founder', async () => {
+    const s = setup();
+    const nobody = await handleAccess(access({ action: 'people' }), ON, s.accessDeps);
+    expect(nobody.status).toBe(401);
+    const other = cookieOf(await signUp(s, OFF, 'someone@acme.example'));
+    const r = await handleAccess(access({ action: 'people' }, { cookie: other }), ON, s.accessDeps);
+    expect(r.status).toBe(403);
+    expect(await r.json()).toMatchObject({ error: 'not_admin' });
+  });
+
+  it('lists every account newest first with its teams and role, every team, no sub-key and no secret', async () => {
+    const s = setup();
+    const cookie = await founderCookie(s);
+    s.tick(10 * 24 * 60 * 60 * 1000);
+    await signUp(s, OFF, 'mia@acme.example', { name: 'Mia Chen' });
+    s.tick(1000);
+    await signUp(s, OFF, 'leo@globex.example', { name: 'Leo Park' });
+    // Mia joins acme/ds as an admin email member; a team made in Bridge has a record and a date.
+    const store = memberStore(s.redis);
+    await store.put('acme/ds', { email: 'mia@acme.example', name: 'Mia Chen', role: 'admin', version: 1, addedBy: 'florian', at: new Date(s.now()).toISOString() });
+    await s.redis.cmd('SADD', 'bridge:account:teams:mia@acme.example', 'acme/ds');
+    await s.redis.cmd('SET', 'bridge:team:rec:a1b2c3d4e5f60718', JSON.stringify({ id: 'a1b2c3d4e5f60718', name: 'Globex UI', createdBy: 'leo@globex.example', createdAt: new Date(s.now()).toISOString(), repo: null, storybook: null }));
+    // Sub-keys that hold an email are never read as accounts.
+    await s.redis.cmd('SET', 'bridge:account:gh:77', 'mia@acme.example');
+    await s.redis.cmd('SET', 'bridge:account:code:' + 'f'.repeat(64), JSON.stringify({ email: 'x@acme.example', id: 'x', name: 'x', version: 1 }));
+    await s.redis.cmd('SET', 'bridge:account:canon:x@acme.example', JSON.stringify({ email: 'x@acme.example', id: 'y', name: 'y', version: 1 }));
+    const r = await handleAccess(access({ action: 'people' }, { cookie }), ON, s.accessDeps);
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.accounts.map((a: { email: string }) => a.email)).toEqual(['leo@globex.example', 'mia@acme.example', 'founder@bridge.test']);
+    expect(body).toMatchObject({ total: 3, truncated: false, joinedWeek: 2 });
+    expect(body.accounts[1]).toEqual({ name: 'Mia Chen', email: 'mia@acme.example', github: null, createdAt: expect.any(String), teams: [{ name: expect.any(String), role: 'admin', via: 'email' }] });
+    expect(body.teams).toEqual(
+      expect.arrayContaining([
+        { name: 'Globex UI', repo: null, members: 0, createdAt: new Date(s.now()).toISOString() },
+        expect.objectContaining({ repo: 'acme/ds', members: 1, createdAt: null }),
+      ]),
+    );
+    // Dated teams first.
+    expect(body.teams[0].name).toBe('Globex UI');
+    const raw = JSON.stringify(body);
+    expect(raw).not.toMatch(/"version"|"id"|code|secret|"tz"/);
   });
 });
 

@@ -125,7 +125,9 @@ describe('pricing (/pricing/)', () => {
   });
 
   it('says prices are planned, gives no path to pay and keeps one primary action (the hero)', () => {
-    expect(TIERS.map((t) => t.cta)).toEqual(['Create your team', undefined, 'Ask about Organization']);
+    expect(TIERS.map((t) => t.cta)).toEqual(['Request access', undefined, 'Ask about Organization']);
+    expect(page).toContain('href={REQUEST} data-session-cta=""><span data-session-cta-label>Request access</span>');
+    expect(pricing.HOME_FOUNDING.primary).toBe('Request access');
     expect(TIERS.filter((t) => t.badge).map((t) => t.id)).toEqual(['team', 'organization']);
     expect(TIERS.find((t) => t.id === 'team')!.footerNote).toBe('Start today on Free. Created by 31 March 2027, your team never pays this.');
     // The Free card says what a founding team keeps, so its limits never read as the founder's limits.

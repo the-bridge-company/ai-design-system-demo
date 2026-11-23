@@ -190,8 +190,8 @@ export const GITHUB_PER_IP_DAY = 60;
 /** Daily backups kept. */
 export const BACKUPS_KEPT = 30;
 export const BACKUP_PREFIX = 'bridge-backups/accounts-';
-/** What the backup holds. Codes and counters never leave Redis. */
-export const EXPORT_PATTERNS = ['bridge:account:*', 'bridge:member:*', 'bridge:members:*', 'bridge:invite:*', 'bridge:team:*'];
+/** What the backup holds, access requests included (api/_lib/access.ts). Codes and counters never leave Redis. */
+export const EXPORT_PATTERNS = ['bridge:account:*', 'bridge:member:*', 'bridge:members:*', 'bridge:invite:*', 'bridge:team:*', 'bridge:access:request:*', 'bridge:access:queue'];
 const EXPORT_SKIP = /^bridge:account:(code|codefor|codetries|count):/;
 const MAX_ACTION_BODY = 4096;
 const COUNTER_TTL_S = 2 * 24 * 60 * 60;

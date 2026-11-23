@@ -55,7 +55,7 @@ describe('invites api', () => {
 describe('the sample team', () => {
   it("opens the demo dialog on the server's refusal of its visitor's write (403 demo), and still rejects", async () => {
     session.token = null;
-    setInvitesFetch(async () => json(403, { error: 'demo', message: 'Nothing is sent from Acme Design. Get started to do this with your own team.' }));
+    setInvitesFetch(async () => json(403, { error: 'demo', message: 'Nothing is sent from Acme Design. Request access to do this with your own team.' }));
     await expect(sendInvites('acme-design-demo/bridge-demo-ds', { role: 'edit' }, [{ email: 'a@b.co' }])).rejects.toMatchObject({ code: 'demo', status: 403 });
     await vi.waitFor(() => expect(demo.openMakeItYours).toHaveBeenCalled());
   });

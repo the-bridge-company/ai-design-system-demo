@@ -1,7 +1,7 @@
 // A write action on a demo team (board D2): Create branch, New brand, Send suggestion, Start an exploration, a token
 // edit sent for review... A calm DS Dialog, never an error. On the sample team (Acme Design) it first says what the
 // action does on a real team (lib/demo.ts demoActionLine, "Send to Figma puts this screen..."), then that nothing is sent, and the
-// way to do it for real is the sample team's one call to action, "Get started" (the email sign-in, never GitHub), the
+// way to do it for real is the sample team's one call to action, "Request access" (the request page, never GitHub), the
 // same as its banner (DemoBanner.tsx). On Bridge's own team, a guest signs in ("Sign in with GitHub"; the shared session
 // listens for data-gh-signin, scripts/github-session.ts). "Keep exploring" closes it. Words in lib/demo.ts; when it
 // opens: scripts/demo-gate.ts.
@@ -10,7 +10,7 @@ import { Alert, Button, ButtonGroup, Dialog, DialogClose, DialogContent } from '
 import { GitHubMark } from './brand-icons';
 import ButtonLink from '../ButtonLink';
 import { DEMO_ACTION_DEFAULT, demoDialog, DEMO_WORDS, isOwnTeam } from '../../../lib/demo';
-import { SIGNIN_PAGE } from '../../../lib/account';
+import { REQUEST_PAGE } from '../../../lib/access-request';
 import { ghButton } from '../../../lib/gh-wording';
 import '../../../styles/demo-home.css';
 
@@ -49,8 +49,8 @@ export function MakeItYours({ open, onOpenChange, signIn, repo, line }: MakeItYo
                 {ghButton(signIn)}
               </Button>
             ) : (
-              <ButtonLink variant="primary" href={SIGNIN_PAGE} data-demo-start="">
-                {DEMO_WORDS.getStarted}
+              <ButtonLink variant="primary" href={REQUEST_PAGE} data-demo-start="">
+                {DEMO_WORDS.requestAccess}
               </ButtonLink>
             )}
           </ButtonGroup>

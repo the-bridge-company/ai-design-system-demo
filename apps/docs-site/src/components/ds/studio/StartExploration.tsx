@@ -59,7 +59,7 @@ import { CopyAccessStep } from './CopyAccessStep';
 import { repoContext, siteConfig } from '../../../scripts/repo-context';
 import { DEMO_WORDS, isSampleTeam, sampleStartLines } from '../../../lib/demo';
 import { keepSampleStart, type SampleStart } from '../../../lib/demo-in-browser';
-import { SIGNIN_PAGE } from '../../../lib/account';
+import { REQUEST_PAGE } from '../../../lib/access-request';
 import ButtonLink from '../ButtonLink';
 import { JIRA_IN_BRIDGE } from '../../../lib/studio-flags';
 import { useCopy } from './TeamLink';
@@ -825,7 +825,7 @@ export default function StartExploration({ components, appearance = 'menu', prod
     );
   } else if (step === 'sample') {
     // The sample team: started in this browser. What Claude AI does with it on a real team, then the sample team's
-    // one call to action (Get started), the same as its banner and dialog.
+    // one call to action (Request access), the same as its banner and dialog.
     const words = sampleStartLines(sampleStart?.name ?? '', sampleStart?.where ?? '');
     title = DEMO_WORDS.sampleStartTitle;
     body = (
@@ -840,8 +840,8 @@ export default function StartExploration({ components, appearance = 'menu', prod
       <Button variant="link" onClick={() => onOpenChange(false)}>
         {DEMO_WORDS.keepExploring}
       </Button>,
-      <ButtonLink variant="primary" size="lg" href={SIGNIN_PAGE} data-demo-start="">
-        {DEMO_WORDS.getStarted}
+      <ButtonLink variant="primary" size="lg" href={REQUEST_PAGE} data-demo-start="">
+        {DEMO_WORDS.requestAccess}
       </ButtonLink>,
     );
   } else {

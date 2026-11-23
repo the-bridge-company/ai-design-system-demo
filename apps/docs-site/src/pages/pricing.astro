@@ -35,11 +35,9 @@ import {
   ORGANIZATION_CONTACT_HREF,
   SAME_EVERYWHERE,
 } from '../lib/pricing';
-import { PRIVACY_PAGE, signInHref } from '../lib/account';
-import { DEMO, TERMS } from '../lib/nav';
+import { PRIVACY_PAGE } from '../lib/account';
+import { DEMO, REQUEST, TERMS } from '../lib/nav';
 
-// Create your team opens the sign-in screen with sign-up words, like the homepage's Get started.
-const GET_STARTED = signInHref(null, true);
 const COMMITMENT = `${TERMS}#t10`;
 const TOS = 'terms of service';
 // The H1 ends on "free.": the hand-drawn stroke goes under "free", not under the period.
@@ -58,7 +56,7 @@ const leadAt = HERO_LEAD.indexOf(TOS);
           {HERO_LEAD.slice(0, leadAt)}<Link href={TERMS}>{TOS}</Link>{HERO_LEAD.slice(leadAt + TOS.length)}
         </p>
         <div class="pr-hero-cta">
-          <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={GET_STARTED} data-session-cta=""><span data-session-cta-label>Create your team</span></ButtonLink>
+          <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={REQUEST} data-session-cta=""><span data-session-cta-label>Request access</span></ButtonLink>
           <ButtonLink variant="secondary" size="lg" href={DEMO}>Open the demo</ButtonLink>
         </div>
         <p class="pr-small pr-muted">{HERO_NOTE}</p>
@@ -87,7 +85,7 @@ const leadAt = HERO_LEAD.indexOf(TOS);
     </div>
 
     <section class="hp-wrap pr-section" aria-labelledby="pr-plans">
-      <PricingPlans client:load hrefs={{ free: GET_STARTED, organization: ORGANIZATION_CONTACT_HREF }} />
+      <PricingPlans client:load hrefs={{ free: REQUEST, organization: ORGANIZATION_CONTACT_HREF }} />
     </section>
 
     <section class="hp-wrap pr-section pr-split" aria-labelledby="pr-diff">

@@ -1,0 +1,12 @@
+---
+// /request/: Request access (components/ds/account/RequestAccess.tsx). Bridge opens on invitation: the demo is open to
+// everyone, a team that wants Bridge on its own design system asks here and the founder replies within 2 working
+// days (api/access). The landing, pricing and the demo lead here. Reads no repository (bare: the Studio top bar only).
+import '../styles/start.css';
+import Layout from '../layouts/Layout.astro';
+import RequestAccess from '../components/ds/account/RequestAccess';
+---
+
+<Layout title="Request access" description="Request access to Bridge for your design system. We reply within 2 working days." crumbs={false} bare>
+  <RequestAccess client:only="react" />
+</Layout>

@@ -1,8 +1,8 @@
 // On the demo (lib/demo.ts DEMO_REPOS), a visitor who cannot write to it explores freely (boards D1, D2 and EmptyA2):
 //   - the one banner over every Studio and Library page (components/ds/studio/DemoBanner.tsx), with one action: on the
-//     sample team "Get started" (the email sign-in), or "Back to your workspace" for someone signed in to Bridge;
+//     sample team "Request access" (the request page), or "Back to your workspace" for someone signed in to Bridge;
 //   - every action that would change the demo opens the demo dialog (components/ds/studio/MakeItYours.tsx): on the
-//     sample team "This is a sample team." with the same "Get started", never a GitHub sign-in out of context.
+//     sample team "This is a sample team." with the same "Request access", never a GitHub sign-in out of context.
 // Someone who can write to the demo (its owner) keeps the normal Studio.
 //
 // Which actions: on the sample team, every write but the few that run in this browser (lib/demo.ts SAMPLE_IN_BROWSER:
@@ -35,7 +35,7 @@ let deps: DemoGateDeps | null = null;
 
 /**
  * A visitor on the sample team who is not signed in with GitHub: its buttons say what they do ("Send for review"),
- * never "Connect GitHub to...", since the sample team's one way in is "Get started" (and a click opens the demo
+ * never "Connect GitHub to...", since the sample team's one way in is "Request access" (and a click opens the demo
  * dialog). Synchronous, from the address: safe to call while painting a label.
  */
 export function sampleVisitor(): boolean {
@@ -111,7 +111,7 @@ export async function openMakeItYours(action?: string | null): Promise<void> {
 
 let banner: Promise<(on: boolean, visiting?: boolean) => void> | null = null;
 
-/** Where the banner's one action leads (DemoBanner.tsx): null is "Get started", for a visitor who has not started. */
+/** Where the banner's one action leads (DemoBanner.tsx): null is "Request access", for a visitor who has not started. */
 async function bannerBack(repo: string): Promise<{ href: string; connect: boolean } | null> {
   const [{ startFacts }, { demoBack, awayFrom }, { loadReserved }, { getAccount }, { defaultNext }] = await Promise.all([
     import('./start'),

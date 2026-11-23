@@ -195,9 +195,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  /* Get started and Open the demo are one pair: the DS gap between buttons, not a section gap. */
+  /* Open the demo and Request access are one pair: the DS gap between buttons, not a section gap. */
   gap: var(--space-3);
   margin-top: var(--space-10);
+}
+
+/* One quiet line under the pair: access opens in small groups. */
+.hp-go-note {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
 }
 
 /* The drawing (components/home/HpHeroScene.astro): under the text on phones and tablets, full width up to its

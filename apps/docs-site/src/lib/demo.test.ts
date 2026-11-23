@@ -25,9 +25,9 @@ describe('the demo', () => {
   });
 
   it('says the sample team sends nothing, in designer words, with one call to action (board D2)', () => {
-    expect(DEMO_WORDS.getStarted).toBe('Get started');
+    expect(DEMO_WORDS.requestAccess).toBe('Request access');
     expect(demoBanner('acme-design-demo/bridge-demo-ds')).toEqual({ title: 'Acme Design.', text: 'This is a sample team: your edits stay in this browser and nothing is sent.' });
-    expect(demoDialog('acme-design-demo/bridge-demo-ds')).toEqual({ title: 'This is a sample team.', lead: 'Nothing is sent from Acme Design. Get started to do this with your own team.' });
+    expect(demoDialog('acme-design-demo/bridge-demo-ds')).toEqual({ title: 'This is a sample team.', lead: 'Nothing is sent from Acme Design. Request access to do this with your own team.' });
     // The sample team never sends a visitor to GitHub.
     for (const t of [...Object.values(demoBanner('acme-design-demo/bridge-demo-ds')), ...Object.values(demoDialog('acme-design-demo/bridge-demo-ds')), DEMO_WORDS.sampleNote, DEMO_WORDS.tryIt]) expect(t).not.toMatch(/GitHub|repo/);
     for (const t of Object.values(DEMO_WORDS)) expect(t).not.toMatch(/\u2014|pull request|token/);

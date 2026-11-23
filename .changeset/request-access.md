@@ -1,0 +1,5 @@
+---
+'@bridge-ds/docs-site': patch
+---
+
+Bridge opens on invitation: "Request access" replaces sign-up as the way in. The landing's hero leads with Open the demo, with Request access beside it (Open Studio for someone signed in) and one line under them: access opens in small groups, we reply within 2 working days. Founding teams on the home page, the pricing hero and the Free card, and the demo's banner and dialogs lead to the new /request/ page: work email (prefilled from ?email=), company, where the design system lives (optional) and what to fix first, with inline errors that say how to fix each one. Sent, it says when and to which email we reply; coming back, the request shows as three steps (Sent, Reviewed, Access), with Continue the demo and Change my request. New function /api/access stores the request (a second request keeps the first one's time), caps it per network, email and site a day, emails the requester a confirmation and the addresses of the new BRIDGE_ADMIN_EMAILS a notice. The requests and their queue are in the daily backup; the privacy page lists what a request keeps. Sign in is unchanged.

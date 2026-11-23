@@ -4,7 +4,7 @@
 // A signed-out visitor explores the sample team as its lead (Dana, a read-only email member session,
 // api/_lib/demo-members.ts): every screen runs the code of any team, and the server refuses each write in the
 // sample-team dialog's words (403 `demo`, api/contribute demoWriteRefusal). The sample team has one banner and one call to
-// action everywhere, Studio and Library: "Get started", the email sign-in (never GitHub). Edits stay in this browser as
+// action everywhere, Studio and Library: "Request access", the request page (never GitHub). Edits stay in this browser as
 // drafts for the visit (scripts/demo-drafts.ts); every action that would write opens the sample-team dialog (components/ds/studio/MakeItYours.tsx,
 // scripts/demo-gate.ts). Everyone reads the sample data that way, signed in or not: no GitHub token is used there
 // (scripts/github-session.ts onSampleTeam). Someone signed in keeps their identity: they are one more member of the
@@ -83,8 +83,8 @@ export const DEMO_WORDS = {
   bannerText: 'This is a sample team: your edits stay in this browser and nothing is sent.',
   /** On a phone the banner folds to one line: this button opens the sentence (and "See it as") under it. */
   bannerDetails: 'Details',
-  /** The one call to action of the sample team: the email sign-in (lib/account.ts SIGNIN_PAGE), never GitHub. */
-  getStarted: 'Get started',
+  /** The one call to action of the sample team: the request page (lib/access-request.ts REQUEST_PAGE), never GitHub. */
+  requestAccess: 'Request access',
   /** The same banner on Bridge's own design system, for a guest: its data is real, so it is not called sample data. */
   ownSampleTitle: `${OWN_TEAM}, read only.`,
   ownSampleText: "You're looking at the design system behind Bridge. Nothing here changes your own design system.",
@@ -93,7 +93,7 @@ export const DEMO_WORDS = {
   connectOwn: 'Connect your design system',
   /** A write action on the sample team (board D2). */
   dialogTitle: 'This is a sample team.',
-  dialogLead: 'Nothing is sent from Acme Design. Get started to do this with your own team.',
+  dialogLead: 'Nothing is sent from Acme Design. Request access to do this with your own team.',
   /** The same dialog on Bridge's own design system: real data, read only for a visitor, never called the demo. */
   ownDialogTitle: 'Sign in with GitHub to do this.',
   ownDialogLead: 'This is the design system behind Bridge, read only for visitors. Nothing is saved.',

@@ -131,7 +131,7 @@ describe('the setup steps, in order and by keyboard', () => {
 describe('the demo banner (boards D1, EmptyA2)', () => {
   const SAMPLE = 'acme-design-demo/bridge-demo-ds';
 
-  it('gives the sample team one banner and one action: Get started, the email sign-in, never GitHub', async () => {
+  it('gives the sample team one banner and one action: Request access, the request page, never GitHub', async () => {
     const { container } = render(createElement(DemoBanner, { repo: SAMPLE }));
     const banner = container.firstElementChild as HTMLElement;
     expect(within(banner).getByText('Acme Design.')).toBeInTheDocument();
@@ -144,24 +144,24 @@ describe('the demo banner (boards D1, EmptyA2)', () => {
     expect(details).toHaveAttribute('aria-controls', within(banner).getByText(/This is a sample team/).id);
     details.click();
     await waitFor(() => expect(details).toHaveAttribute('aria-expanded', 'true'));
-    const start = screen.getByRole('link', { name: 'Get started' });
-    expect(start).toHaveAttribute('href', '/signin/');
+    const start = screen.getByRole('link', { name: 'Request access' });
+    expect(start).toHaveAttribute('href', '/request/');
     // Secondary weight: the page keeps its own primary (Review all on the demo home).
     expect(start.className).not.toMatch(/primary/);
     expect(banner.textContent).not.toMatch(/GitHub|Use your own repo/);
     await expectNoAxeViolations(container);
   });
 
-  it('draws "See it as" with the same DS Button variant and size as Get started: one button language on the warm banner', async () => {
+  it('draws "See it as" with the same DS Button variant and size as Request access: one button language on the warm banner', async () => {
     const { container } = render(createElement(DemoBanner, { repo: SAMPLE, cast: { current: 'leo', onPick: () => undefined } }));
-    const start = screen.getByRole('link', { name: 'Get started' });
+    const start = screen.getByRole('link', { name: 'Request access' });
     const seeAs = screen.getByRole('button', { name: /^See it as/ });
     // CSS module class names (scoped in this project): the DS Button's variant class, whatever its hash.
     const variant = (el: Element) => [...el.classList].filter((c) => /^_?(primary|secondary|ghost|danger)(_|$)/.test(c));
     expect(variant(start)).toHaveLength(1);
     expect(variant(start)[0]).toMatch(/secondary/);
     expect(variant(seeAs)).toEqual(variant(start));
-    // The same height as Get started, and the face rides on the button's surface fill.
+    // The same height as Request access, and the face rides on the button's surface fill.
     const size = (el: Element) => [...el.classList].filter((c) => /^_?(sm|md|lg)(_|$)/.test(c));
     expect(size(start)).toHaveLength(1);
     expect(size(seeAs)).toEqual(size(start));
@@ -172,7 +172,7 @@ describe('the demo banner (boards D1, EmptyA2)', () => {
   it('leads someone signed in to Bridge back to their own team instead', async () => {
     const { container } = render(createElement(DemoBanner, { repo: SAMPLE, back: { href: '/studio/acme/ds/', connect: false } }));
     expect(screen.getByRole('link', { name: 'Back to your workspace' })).toHaveAttribute('href', '/studio/acme/ds/');
-    expect(screen.queryByRole('link', { name: 'Get started' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Request access' })).toBeNull();
     expect(screen.getAllByRole('link')).toHaveLength(1);
     await expectNoAxeViolations(container);
   });

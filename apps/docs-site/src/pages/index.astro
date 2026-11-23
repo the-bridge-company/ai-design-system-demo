@@ -36,10 +36,8 @@ import HpConnectCard from '../components/home/HpConnectCard';
 import HandUnderline from '../components/site/HandUnderline.astro';
 import HpFounding from '../components/home/HpFounding.astro';
 import { HOME_FOUNDING } from '../lib/pricing';
-import { signInHref } from '../lib/account';
-import { DEMO } from '../lib/nav';
-// Get started opens the sign-in screen with sign-up words; a new account then lands on /start/.
-const GET_STARTED = signInHref(null, true);
+import { ACCESS_WORDS } from '../lib/access-request';
+import { DEMO, REQUEST } from '../lib/nav';
 
 ---
 
@@ -58,9 +56,10 @@ const GET_STARTED = signInHref(null, true);
         </h1>
         <p class="hp-lede"><span class="hp-hs">Bridge finds what your exploration added. </span><span class="hp-hs">You review it, then the code and Figma kit follow.</span></p>
         <div class="hp-go">
-          <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={GET_STARTED} data-session-cta=""><span data-session-cta-label>Get started</span></ButtonLink>
-          <ButtonLink variant="secondary" size="lg" href={DEMO}>Open the demo</ButtonLink>
+          <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={DEMO}>Open the demo</ButtonLink>
+          <ButtonLink variant="secondary" size="lg" href={REQUEST} data-session-cta=""><span data-session-cta-label>Request access</span></ButtonLink>
         </div>
+        <p class="hp-go-note">{ACCESS_WORDS.heroNote}</p>
       </div>
       <div class="hp-hero-vis">
         <HpHeroScene />
@@ -168,7 +167,7 @@ const GET_STARTED = signInHref(null, true);
     </section>
 
     <!-- Founding teams: the date, three facts, before the last call (board Home B). -->
-    <HpFounding getStarted={GET_STARTED} />
+    <HpFounding getStarted={REQUEST} />
 
     <!-- Closing: Horizon. Florian carries the kept card across the bridge; hover or focus pauses the walk. No call to
          action here before paid plans open: the founding section just above already carries it (one CTA, said once). -->

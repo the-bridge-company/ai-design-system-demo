@@ -196,7 +196,7 @@ describe('auth', () => {
     const s = setup();
     const r = await post(s, null, { action: 'delete-team', team: 'acme-design-demo/bridge-demo-ds' });
     expect(r.status).toBe(403);
-    expect(await r.json()).toMatchObject({ error: 'demo', message: 'Nothing is sent from Acme Design. Get started to do this with your own team.' });
+    expect(await r.json()).toMatchObject({ error: 'demo', message: 'Nothing is sent from Acme Design. Request access to do this with your own team.' });
     // Any other team still asks for the account.
     expect((await post(s, null, { action: 'delete-team', team: REPO })).status).toBe(401);
   });

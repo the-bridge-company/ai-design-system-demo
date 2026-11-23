@@ -830,7 +830,7 @@ describe('the sample team', () => {
     for (const body of [{ action: 'invite', repo: SAMPLE, role: 'edit', people: [{ email: 'x@acme.example' }] }, { action: 'set-role', repo: SAMPLE, email: 'leo@acme.example', role: 'admin' }, { action: 'cancel', repo: SAMPLE, id: 'abc' }]) {
       const r = await handleInvites(visitor(body), {}, deps);
       expect(r.status).toBe(403);
-      expect(await r.json()).toMatchObject({ error: 'demo', message: 'Nothing is sent from Acme Design. Get started to do this with your own team.' });
+      expect(await r.json()).toMatchObject({ error: 'demo', message: 'Nothing is sent from Acme Design. Request access to do this with your own team.' });
     }
     expect(sent).toHaveLength(0);
   });

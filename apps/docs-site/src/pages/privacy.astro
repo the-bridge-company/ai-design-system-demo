@@ -21,6 +21,7 @@ import { DOCS_SECURITY } from '../lib/nav';
       <h2 id="pv-keeps" class="pv-h">What Bridge keeps</h2>
       <ul>
         <li>Your account email and the name you gave.</li>
+        <li>If you requested access: your email, your company, the link to your design system if you gave one, and what you want to fix first, so we can review your request and reply to it. Write to us to have it deleted.</li>
         <li>Your GitHub login, when you link GitHub.</li>
         <li>The teams you belong to, and your role on each.</li>
         <li>A team you create in Bridge: its name, the email of the person who created it, when, and later the Storybook address or the repository connected to it.</li>
@@ -50,7 +51,7 @@ import { DOCS_SECURITY } from '../lib/nav';
     <section class="pv-section" aria-labelledby="pv-where">
       <h2 id="pv-where" class="pv-h">Where and for how long</h2>
       <p>Your account lives in an Upstash Redis database in Frankfurt, Germany, with a daily backup in Vercel Blob in Paris, France. Bridge keeps it until you delete your account. Backups are kept 30 days, then removed.</p>
-      <p>Sign-in codes and invites are sent by Resend. The emails about your work are sent by Brevo, in the European Union: it receives your email address and the text of each email, nothing else.</p>
+      <p>Sign-in codes, invites and the confirmation of an access request are sent by Resend. The emails about your work are sent by Brevo, in the European Union: it receives your email address and the text of each email, nothing else.</p>
       <p>Payments for paid plans are processed by Stripe, our payment provider: it receives the billing details of the team that pays and your payment method, and keeps the invoices. Bridge never sees or stores your full card number. Stripe handles this data under <Link href="https://stripe.com/privacy">its own privacy policy</Link>.</p>
     </section>
 

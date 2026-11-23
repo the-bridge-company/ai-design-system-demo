@@ -159,7 +159,7 @@ export const HERO_TITLE = `Bridge is free today. Start your team by ${FOUNDING_C
 export const HERO_LEAD = `Every tier has every feature. Paid plans open in ${PAID_PLANS_OPEN}, at the planned prices below. A team created by ${FOUNDING_CUTOFF_LABEL} never moves to them: it is written in our terms of service.`;
 /** How people sign in today, one wording everywhere (/privacy/, /terms/ 3.1). There is no Google or Microsoft sign-in. */
 export const SIGN_IN = 'Sign in with GitHub or a code sent to your email, on every tier. SAML on your own identity provider is Organization.';
-export const HERO_NOTE = 'No card needed. Sign in with GitHub or a code sent to your email.';
+export const HERO_NOTE = 'No card needed. Access opens in small groups. We reply within 2 working days.';
 export const VAT_NOTE = VAT_MENTION;
 
 export const PLANS_TITLE = `What paid plans will cost from ${PAID_PLANS_OPEN}`;
@@ -193,7 +193,7 @@ export const TIERS: Tier[] = [
       title: `Created by ${FOUNDING_CUTOFF_LABEL}: no limits`,
       text: 'A founding team keeps unlimited editors and design systems, free with no end date.',
     },
-    cta: 'Create your team',
+    cta: 'Request access',
   },
   {
     id: 'team',
@@ -279,7 +279,7 @@ export const HOME_FOUNDING = {
   titleLead: `Start your team by ${FOUNDING_CUTOFF_LABEL}. It stays `,
   titleAccent: 'free',
   titleEnd: '.',
-  primary: 'Create your team',
+  primary: 'Request access',
   secondary: 'See planned prices',
   facts: [
     { title: 'No end date', text: 'At no cost. No future price change applies to it.' },

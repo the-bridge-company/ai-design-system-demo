@@ -9,6 +9,8 @@ import { STUDIO_ROOT } from './team-path.js';
 /** The request page (the landing, pricing and the demo lead here). */
 export const REQUEST_PAGE = '/request/';
 export const ACCESS_API = '/api/access';
+/** The sign-in page (lib/account SIGNIN_PAGE; kept here so api/access imports nothing browser-side). */
+export const SIGNIN_PATH = '/signin/';
 /** The demo the page and the confirmation email point to: lib/nav DEMO. */
 export const ACCESS_DEMO = `${STUDIO_ROOT}${SAMPLE_REPO}/`;
 /** What this browser remembers of its request ({ email, at }), so a visitor who comes back sees where it stands. */
@@ -128,3 +130,150 @@ export function emailFromQuery(search: string): string {
   const v = oneLine(new URLSearchParams(search).get('email'));
   return isAccessEmail(v) ? v : '';
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// The gate (BRIDGE_ACCESS_GATE=on, api/account) and access links (/signin/?access=<token>)
+
+/** An approval (the founder's Invite) stays open this long: an account must be made within it. */
+export const ACCESS_APPROVAL_MS = 30 * 24 * 60 * 60 * 1000;
+/** The query parameter of an access link on /signin/. */
+export const ACCESS_PARAM = 'access';
+/** This tab keeps the access link's token while the sign-in goes on (and through GitHub and back). */
+export const ACCESS_LINK_KEY = 'bridge:access-link';
+/** The admin queue (pages/admin/access.astro). */
+export const ACCESS_ADMIN_PAGE = '/admin/access/';
+/** The places the founder means to open each ISO week (ACCESS_WEEKLY_CAP). */
+export const ACCESS_WEEKLY_CAP = 5;
+
+export type AccessLinkState = 'valid' | 'expired' | 'used';
+
+/** Where a link stands: expired once past expiresAt, used once all its uses are taken. */
+export function linkStateOf(l: { expiresAt: string; maxUses: number; uses: number }, now: number): AccessLinkState {
+  if (!(Date.parse(l.expiresAt) > now)) return 'expired';
+  if (l.uses >= l.maxUses) return 'used';
+  return 'valid';
+}
+
+/** The access link token of the sign-in address (?access=), when it looks like one. */
+export function accessTokenFromQuery(search: string): string | null {
+  const v = new URLSearchParams(search).get(ACCESS_PARAM)?.trim() ?? '';
+  return /^[A-Za-z0-9_-]{43}$/.test(v) ? v : null;
+}
+
+/** The request page with the email filled in. */
+export const requestHref = (email: string): string => (email ? `${REQUEST_PAGE}?email=${encodeURIComponent(email)}` : REQUEST_PAGE);
+
+export const GATE_WORDS = {
+  /** The server's sentence with 403 access_required. */
+  refused: 'Bridge opens in small groups. Request access with this email and we reply within 2 working days.',
+  title: 'Bridge opens in small groups',
+  text: 'Request access with this email and we reply within 2 working days. The demo is open meanwhile.',
+  request: 'Request access',
+  demo: 'Open the demo',
+  anotherEmail: 'Use another email',
+  /** "Florian invited you to Bridge" */
+  linkTitle: (inviter: string) => `${inviter || 'Florian'} invited you to Bridge`,
+  linkLead: 'Sign in with your work email to start.',
+  linkGone: 'This invite link has expired. Request access and we will review it first.',
+  linkGoneTitle: 'Bridge opens in small groups',
+} as const;
+
+/** What GET /api/access?link= answers. */
+export type AccessLinkInfo = { valid: true; label: string; inviter: string; expiresAt: string } | { valid: false; reason: 'expired' | 'used' | 'unknown' };
+
+export function parseAccessLinkInfo(v: unknown): AccessLinkInfo | null {
+  if (!v || typeof v !== 'object') return null;
+  const o = v as Record<string, unknown>;
+  if (o.valid === true) return { valid: true, label: String(o.label ?? ''), inviter: String(o.inviter ?? ''), expiresAt: String(o.expiresAt ?? '') };
+  if (o.valid === false) return { valid: false, reason: o.reason === 'expired' || o.reason === 'used' ? o.reason : 'unknown' };
+  return null;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The founder's queue (/admin/access/)
+
+/** Monday 00:00 UTC of the ISO week `now` falls in, in ms. */
+export function isoWeekStart(now: number): number {
+  const d = new Date(now);
+  const day = (d.getUTCDay() + 6) % 7;
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day);
+}
+
+export interface QueueRequest extends AccessRequestInput {
+  at: string;
+  status: string;
+  approvedAt?: string;
+  approvedVia?: 'queue' | 'link';
+  declinedAt?: string;
+  note?: string;
+}
+
+/** Waiting first, then those that gave a link to their design system, then the oldest. */
+export function sortQueue<T extends Pick<QueueRequest, 'status' | 'where' | 'at'>>(list: readonly T[]): T[] {
+  const rank = (r: T) => (r.status === 'pending' ? 0 : 1);
+  return [...list].sort((a, b) => rank(a) - rank(b) || Number(!a.where) - Number(!b.where) || Date.parse(a.at) - Date.parse(b.at));
+}
+
+/** The founder's invites this ISO week (an access link's sign-up is not one). */
+export function invitedThisWeek(list: readonly Pick<QueueRequest, 'status' | 'approvedAt' | 'approvedVia'>[], now: number): number {
+  const from = isoWeekStart(now);
+  return list.filter((r) => r.status === 'invited' && r.approvedVia !== 'link' && r.approvedAt && Date.parse(r.approvedAt) >= from && Date.parse(r.approvedAt) <= now).length;
+}
+
+export interface AdminLink {
+  id: string;
+  label: string;
+  createdBy: string;
+  createdAt: string;
+  expiresAt: string;
+  maxUses: number;
+  uses: number;
+  usedBy: string[];
+  state: AccessLinkState;
+}
+
+export const ADMIN_WORDS = {
+  title: 'Access requests',
+  /** "3 requests waiting · 2 of 5 places left this week" */
+  summary: (waiting: number, left: number, cap: number) => `${waiting} ${waiting === 1 ? 'request' : 'requests'} waiting · ${left} of ${cap} places left this week`,
+  overCap: (cap: number) => `This week's ${cap} places are taken. You can still invite: it is your call.`,
+  invite: 'Invite',
+  notYet: 'Not yet',
+  invited: (day: string) => `Invited ${day}`,
+  invitedByLink: (day: string) => `Joined with a link ${day}`,
+  declined: (day: string) => `Not yet, ${day}`,
+  sent: (day: string) => `Sent ${day}`,
+  noWhere: 'No design system link',
+  emptyTitle: 'No requests yet',
+  emptyText: 'Requests sent on the Request access page show here. Meanwhile, an invite link brings in someone you already talked to.',
+  notYetTitle: (company: string) => `Not yet for ${company}?`,
+  notYetText: 'They get an honest email: not yet, your note, and that the demo stays open.',
+  noteLabel: 'Note (optional)',
+  noteHint: 'One or two sentences, sent as you write them.',
+  notYetSend: 'Send not yet',
+  cancel: 'Cancel',
+  invitedToast: (email: string) => `Invited. ${email} gets the sign-in email now.`,
+  declinedToast: (email: string) => `Sent. ${email} knows it is not yet.`,
+  linksTitle: 'Invite links',
+  linksLead: 'For someone you already talked to: the link opens Bridge without a request.',
+  labelLabel: 'Who is it for',
+  labelPlaceholder: 'Ana at Acme',
+  usesLabel: 'Uses',
+  daysLabel: 'Days',
+  createLink: 'Create link',
+  newLinkTitle: 'Link created. Copy it now: Bridge shows it only once.',
+  copy: 'Copy link',
+  copied: 'Copied',
+  revoke: 'Revoke',
+  /** "1 of 1 used · expires 7 December 2026" */
+  linkMeta: (uses: number, max: number, state: AccessLinkState, day: string) =>
+    `${uses} of ${max} used · ${state === 'expired' ? `expired ${day}` : `expires ${day}`}`,
+  noLinks: 'No invite links yet.',
+  badLabel: 'Say who the link is for, in a few words.',
+  signInTitle: 'Sign in to see access requests',
+  signInText: 'This page is for the people who open Bridge to new teams.',
+  signIn: 'Sign in',
+  notAdmin: 'This page is for the people who open Bridge to new teams. Your account is not one of them.',
+  failed: 'Bridge could not load the requests. Try again in a minute.',
+  retry: 'Try again',
+} as const;

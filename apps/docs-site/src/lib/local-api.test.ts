@@ -216,6 +216,11 @@ describe('outbox and env', () => {
     expect(env.LIBRARY_SESSION_SECRET).toBe('s'.repeat(40));
   });
 
+  it('carries the access gate switches (not secrets) so the gate can be tried locally', () => {
+    const env = localEnv('s'.repeat(40), [{ BRIDGE_ACCESS_GATE: 'on', BRIDGE_ADMIN_EMAILS: 'founder@bridge.test' }, { ACCESS_WEEKLY_CAP: '3' }]);
+    expect(env).toMatchObject({ BRIDGE_ACCESS_GATE: 'on', BRIDGE_ADMIN_EMAILS: 'founder@bridge.test', ACCESS_WEEKLY_CAP: '3' });
+  });
+
   it('reads .env.local with quotes and a multi-line key', () => {
     const v = parseEnvFile('# c\nGITHUB_APP_ID=42\nexport A="x\\ny"\nGITHUB_APP_PRIVATE_KEY="-----BEGIN-----\nabc\n-----END-----"\nB=\'q\'\n');
     expect(v).toEqual({ GITHUB_APP_ID: '42', A: 'x\ny', GITHUB_APP_PRIVATE_KEY: '-----BEGIN-----\nabc\n-----END-----', B: 'q' });

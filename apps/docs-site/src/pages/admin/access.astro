@@ -1,0 +1,13 @@
+---
+// /admin/access/: the founder's queue of access requests and invite links (components/ds/account/AccessAdmin.tsx).
+// Bridge opens on invitation: requests sent on /request/ wait here; Invite opens access for 30 days, Not yet answers
+// honestly; invite links let in a prospect the founder already talked to. Only an address of BRIDGE_ADMIN_EMAILS signed
+// in reads it (api/access refuses anyone else). Never indexed. Reads no repository (bare: the Studio top bar only).
+import '../../styles/start.css';
+import Layout from '../../layouts/Layout.astro';
+import AccessAdmin from '../../components/ds/account/AccessAdmin';
+---
+
+<Layout title="Access requests" description="The queue of requests to use Bridge, and the invite links." crumbs={false} bare noindex>
+  <AccessAdmin client:only="react" />
+</Layout>

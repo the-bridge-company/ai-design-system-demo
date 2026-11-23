@@ -28,6 +28,7 @@
 //   POST { action: 'verify', email | invite, code, name? }   sets the cookie; { account, created, next }
 //                                              (a wrong code answers 400 wrong-code with triesLeft)
 //   POST { action: 'github', token }           links or creates from a GitHub user token, sets the cookie; same answer
+//   verify and github also take `access` (an access link's token, /signin/?access=): see "The gate" below.
 //   POST { action: 'rename', name }            { account }
 //   POST { action: 'ai-tools', tools }         the AI tools the person uses (src/lib/ai-tools.ts: claude-app,
 //                                              claude-code, copilot), at least one; { account }, 400 bad_tools
@@ -56,6 +57,14 @@
 //                                              on GitHub with the Bridge app when it is set up).
 // Every request other than GET carries `X-Bridge-Account: 1`, JSON, and an Origin of this very site (CSRF).
 //
+// The gate (BRIDGE_ACCESS_GATE=on, read per request; off by default: anyone makes an account). Bridge opens on
+// invitation: once the code is right (or GitHub vouched for the emails), a NEW account is made only when one holds:
+// the email is approved in the founder's queue (api/access invite, 30 days), the call carries a live access link
+// (`access`, then one of its uses is taken and the email reads approved), the email has a team invite or membership
+// or a team is open to its work domain (teams keep inviting their colleagues freely), or it is an address of
+// BRIDGE_ADMIN_EMAILS. Else 403 access_required { message, request: '/request/?email=...' }: no account, no cookie.
+// Existing accounts always sign in, and nothing about access is said before the email is proven (api/_lib/access.ts).
+//
 // Security: codes are compared in constant time on their SHA-256, stored only hashed, 10 minutes, single use; 5 wrong
 // tries burn the code. Codes are capped per email, per network and for the site per UTC day (emails and networks
 // under an HMAC), and the answer is the same whether or not an account exists. Nothing here logs an email or a code.
@@ -82,6 +91,10 @@ import {
   shownEmail,
 } from '../_lib/account.js';
 import { mergeEmailAccounts } from '../_lib/account-merge.js';
+import { accessGateOn, approvalLive, consumeAccessLink, findAccessRequest, isAdminEmail, markApprovedByLink } from '../_lib/access.js';
+import { workDomain } from '../_lib/domains.js';
+import { teamsForDomain } from '../_lib/teams.js';
+import { GATE_WORDS, requestHref } from '../../src/lib/access-request.js';
 import { canonicalEmail, emailSpellings, legacyEmail, sameEmail } from '../_lib/canonical-email.js';
 import { forgetChanges } from '../_lib/former-member.js';
 import { parseAiTools, type AiTool } from '../../src/lib/ai-tools.js';
@@ -126,6 +139,10 @@ export interface AccountEnv {
   BREVO_API_KEY?: string | undefined;
   NOTIFY_FROM?: string | undefined;
   PUBLIC_SITE_URL?: string | undefined;
+  /** "on": a new account needs an approval, an access link, a team or an admin address (see "The gate" above). */
+  BRIDGE_ACCESS_GATE?: string | undefined;
+  /** The founders (api/access): always let in. */
+  BRIDGE_ADMIN_EMAILS?: string | undefined;
 }
 
 /** The backup store (Vercel Blob in production). */
@@ -191,7 +208,18 @@ export const GITHUB_PER_IP_DAY = 60;
 export const BACKUPS_KEPT = 30;
 export const BACKUP_PREFIX = 'bridge-backups/accounts-';
 /** What the backup holds, access requests included (api/_lib/access.ts). Codes and counters never leave Redis. */
-export const EXPORT_PATTERNS = ['bridge:account:*', 'bridge:member:*', 'bridge:members:*', 'bridge:invite:*', 'bridge:team:*', 'bridge:access:request:*', 'bridge:access:queue'];
+export const EXPORT_PATTERNS = [
+  'bridge:account:*',
+  'bridge:member:*',
+  'bridge:members:*',
+  'bridge:invite:*',
+  'bridge:team:*',
+  'bridge:access:request:*',
+  'bridge:access:queue',
+  'bridge:access:link:*',
+  'bridge:access:linkuse:*',
+  'bridge:access:links',
+];
 const EXPORT_SKIP = /^bridge:account:(code|codefor|codetries|count):/;
 const MAX_ACTION_BODY = 4096;
 const COUNTER_TTL_S = 2 * 24 * 60 * 60;
@@ -435,6 +463,38 @@ async function createAccount(ctx: Ctx, typedEmail: string, typed: unknown, githu
   return a;
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// The gate
+
+/** Why a new account may be made under the gate, without an access link; null when nothing lets it in. */
+async function allowedWithoutLink(ctx: Ctx, email: string): Promise<'admin' | 'approved' | 'team' | null> {
+  const { redis } = ctx.svc;
+  if (isAdminEmail(ctx.env.BRIDGE_ADMIN_EMAILS, email)) return 'admin';
+  if (approvalLive((await findAccessRequest(redis, email))?.request, ctx.now())) return 'approved';
+  // A team asked for them: an invite, a membership already, or a team open to their work domain.
+  if ((await inviteStoreOn(redis, ctx.now).byEmail(email)).length) return 'team';
+  for (const e of emailSpellings(email)) if ((await scanKeys(redis, `bridge:member:*:${globEscape(e)}`)).length) return 'team';
+  if (ctx.svc.localAdmins && (await ctx.svc.localAdmins.teamsOf(email)).length) return 'team';
+  const domain = workDomain(email);
+  if (domain && (await teamsForDomain(redis, domain)).length) return 'team';
+  return null;
+}
+
+/**
+ * Under the gate, the email a new account may be made with (the first of `emails` let in, else the first one with an
+ * access link, whose use is then taken), or a 403 access_required for the first one. Off: the first one.
+ */
+async function gateFor(ctx: Ctx, emails: string[], access: unknown): Promise<{ email: string } | { refused: Response }> {
+  const first = emails[0]!;
+  if (!accessGateOn(ctx.env.BRIDGE_ACCESS_GATE)) return { email: first };
+  for (const e of emails) if (await allowedWithoutLink(ctx, e)) return { email: e };
+  if (access !== undefined && (await consumeAccessLink(ctx.svc.redis, access, canonicalEmail(first), ctx.now()))) {
+    await markApprovedByLink(ctx.svc.redis, first, ctx.now());
+    return { email: first };
+  }
+  return { refused: fail(403, 'access_required', GATE_WORDS.refused, { request: requestHref(first) }) };
+}
+
 async function signedIn(ctx: Ctx, a: Account, created: boolean, tz?: unknown): Promise<Response> {
   // The browser's time zone, kept once (the daily summary comes at 09:00 there): never changed by a later sign-in.
   const zone = a.tz ? null : validTimeZone(tz);
@@ -567,6 +627,9 @@ async function onVerify(ctx: Ctx, req: Request, body: Record<string, unknown>): 
   await mergeMailbox(ctx, email);
   const known = await getAccount(svc.redis, email);
   if (known) return signedIn(ctx, known, false, body.tz);
+  // A new account: the gate decides, now that the code proved the email is theirs.
+  const gate = await gateFor(ctx, [to], body.access);
+  if ('refused' in gate) return gate.refused;
   return signedIn(ctx, await createAccount(ctx, to, body.name, null), true, body.tz);
 }
 
@@ -635,7 +698,11 @@ async function onGithub(ctx: Ctx, req: Request, body: Record<string, unknown>): 
   }
   const primary = verified.find((e) => e.primary);
   if (!primary) return fail(409, 'no-verified-email', NO_VERIFIED_EMAIL);
-  return signedIn(ctx, await createAccount(ctx, primary.email, user.name, github, user.login), true, body.tz);
+  // A new account: the gate decides on GitHub's verified emails, the primary first (it is the one made when let in by
+  // a link, or when the gate is off).
+  const gate = await gateFor(ctx, verified.map((e) => e.email), body.access);
+  if ('refused' in gate) return gate.refused;
+  return signedIn(ctx, await createAccount(ctx, gate.email, user.name, github, user.login), true, body.tz);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1088,6 +1155,8 @@ const envFromProcess = (): AccountEnv => ({
   BREVO_API_KEY: process.env.BREVO_API_KEY,
   NOTIFY_FROM: process.env.NOTIFY_FROM,
   PUBLIC_SITE_URL: process.env.PUBLIC_SITE_URL,
+  BRIDGE_ACCESS_GATE: process.env.BRIDGE_ACCESS_GATE,
+  BRIDGE_ADMIN_EMAILS: process.env.BRIDGE_ADMIN_EMAILS,
 });
 
 // Answers to calls with the Bridge app's tokens are metered per installation (api/_lib/github-quota.ts).

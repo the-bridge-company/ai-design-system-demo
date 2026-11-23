@@ -10,6 +10,7 @@ import type { AiTool } from '../lib/ai-tools';
 import type { FaceRecipe } from '../lib/team-faces';
 import { isContribAuth } from '../lib/contribute';
 import { noteAccountTeamNames } from '../lib/recent-teams';
+import { ACCESS_API, parseAccessLinkInfo, type AccessLinkInfo } from '../lib/access-request';
 
 /** The site has no account server, or it is not set up. */
 export class AccountUnavailable extends Error {
@@ -140,14 +141,29 @@ function timeZone(): { tz?: string } {
   }
 }
 
-/** Checks the code; sets the session cookie. */
-export async function verifyCode(to: CodeFor, code: string, name?: string): Promise<SignedIn> {
-  return signedIn(await call('POST', '', { action: 'verify', ...codeTarget(to), code, ...(name ? { name } : {}), ...timeZone() }));
+/**
+ * Checks the code; sets the session cookie. `access`: the token of the access link this sign-in came from
+ * (/signin/?access=), which lets a new account in while Bridge opens on invitation. Refused: AccountError
+ * access_required, with `details.request` the request page for this email.
+ */
+export async function verifyCode(to: CodeFor, code: string, name?: string, access?: string | null): Promise<SignedIn> {
+  return signedIn(await call('POST', '', { action: 'verify', ...codeTarget(to), code, ...(name ? { name } : {}), ...(access ? { access } : {}), ...timeZone() }));
 }
 
 /** Signs in with (or links) the GitHub account of a GitHub sign-in token; the token is not kept by the server. */
-export async function signInWithGitHub(token: string): Promise<SignedIn> {
-  return signedIn(await call('POST', '', { action: 'github', token, ...timeZone() }));
+export async function signInWithGitHub(token: string, access?: string | null): Promise<SignedIn> {
+  return signedIn(await call('POST', '', { action: 'github', token, ...(access ? { access } : {}), ...timeZone() }));
+}
+
+/** What an access link is (GET /api/access?link=): who invited, or why it no longer works. Null when nobody answers. */
+export async function readAccessLink(token: string): Promise<AccessLinkInfo | null> {
+  try {
+    const res = await fetchImpl(`${ACCESS_API}?link=${encodeURIComponent(token)}`, { method: 'GET', headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store' });
+    if (!res.ok || !/json/i.test(res.headers.get('content-type') ?? '')) return null;
+    return parseAccessLinkInfo(await res.json());
+  } catch {
+    return null;
+  }
 }
 
 async function update(body: Record<string, unknown>): Promise<Account | null> {

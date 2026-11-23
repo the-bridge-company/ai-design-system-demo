@@ -220,7 +220,7 @@ export function parseEnvFile(text: string): Record<string, string> {
   return out;
 }
 
-/** The only variables local mode reads from .env.local and the shell: GitHub App keys. */
+/** The variables local mode reads from .env.local and the shell: GitHub App keys, and ACCESS_KEYS below. */
 export const GITHUB_KEYS = [
   'GITHUB_APP_ID',
   'GITHUB_APP_PRIVATE_KEY',
@@ -237,6 +237,9 @@ export function sessionSecret(dir: string): string {
   writeFileSync(file, `${fresh}\n`, { mode: 0o600 });
   return fresh;
 }
+
+/** Access gate switches local mode passes on (not secrets): the gate, the founders' addresses, the weekly cap. */
+export const ACCESS_KEYS = ['BRIDGE_ACCESS_GATE', 'BRIDGE_ADMIN_EMAILS', 'ACCESS_WEEKLY_CAP'] as const;
 
 /**
  * The env every handler gets locally. Storage, email, backup and cron variables are left out on purpose, so a
@@ -255,7 +258,7 @@ export function localEnv(secret: string, sources: Record<string, string | undefi
     CRON_SECRET: undefined,
     PUBLIC_SITE_URL: undefined,
   };
-  for (const k of GITHUB_KEYS) {
+  for (const k of [...GITHUB_KEYS, ...ACCESS_KEYS]) {
     const v = sources.map((s) => s[k]?.trim()).find(Boolean);
     if (v) env[k] = v;
   }

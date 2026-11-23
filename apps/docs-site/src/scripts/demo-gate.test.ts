@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The demo gate on the sample team: a click on a marked action ([data-demo-write]) opens the demo dialog, which says
-// what that action does on a real team (lib/demo.ts demoActionLine), then that nothing is sent, with "Get started".
+// what that action does on a real team (lib/demo.ts demoActionLine), then that nothing is sent, with "Request access".
 // A refused write without a named action (a GitHub write through Bridge) says what the visitor clicked last.
 import '../../../../packages/react/src/test/setup';
 import { screen, waitFor } from '@testing-library/react';
@@ -41,7 +41,7 @@ describe('the demo dialog says what the action does', () => {
     expect(text).toContain('This is a sample team.');
     expect(text).toContain(demoActionLine([mark]));
     expect(text).toContain(DEMO_WORDS.dialogLead);
-    expect(screen.getByRole('link', { name: DEMO_WORDS.getStarted })).toBeTruthy();
+    expect(screen.getByRole('link', { name: DEMO_WORDS.requestAccess })).toBeTruthy();
     await closeDialog();
     btn.remove();
   });

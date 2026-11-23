@@ -17,6 +17,7 @@ import { loadComponents } from './components';
 import { repoModel } from './model';
 import { libraryPatterns, patternKindGroup, patternKindLead, patternRoute } from './library/patterns';
 import { START_PAGE, WORKSPACE_HOME, WORKSPACE_SETTINGS } from './start';
+import { REQUEST_PAGE } from './access-request';
 import { LIBRARY_FOUNDATION_PAGES, LIBRARY_PATTERN_KIND_PAGES, LIBRARY_USE_PAGES } from './library-shells';
 
 // Studio links in both modes (self-hosted /studio/, team shells /studio/<owner>/<repo>/). Browser code imports it from
@@ -99,6 +100,8 @@ export const DOCS_CONFLUENCE = '/docs/confluence/';
 export const STUDIO_HOME = '/studio/';
 /** The read-only demo ("Open the demo" on /start/ and the team menu): the hosted Studio of the dedicated demo repo (lib/demo DEMO_REPOS). */
 export const DEMO = '/studio/acme-design-demo/bridge-demo-ds/';
+/** "Request access" (lib/access-request.ts): the landing, pricing and the demo lead here. */
+export const REQUEST = REQUEST_PAGE;
 /** "Get started": how do you want to start, while this browser remembers no workspace (lib/start.ts). */
 export const START = START_PAGE;
 /** The browser workspace: a Studio home with nothing connected yet (lib/start.ts). */

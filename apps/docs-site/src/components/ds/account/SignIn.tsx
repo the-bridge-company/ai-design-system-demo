@@ -1,5 +1,5 @@
 // The one sign-in screen of Bridge (pages/signin.astro), for sign in and sign up alike (boards E1 and E2, recomposed
-// 2026-11-06): the whole viewport in two parts, SignInPage below. The step sits on white paper: "Welcome to Bridge", the
+// 2026-11-06): the whole viewport in two parts, SignInPage.tsx. The step sits on white paper: "Welcome to Bridge", the
 // work email and Send code (the one primary action), under it the demo as a real secondary button. Beside it the one
 // Harbor zone says what Bridge is, over the story of a bridge closing (SignInScene). On a phone the step comes first
 // and the zone closes the page, so nothing pushes Send code down. Every step and room below keeps this page; past the
@@ -23,7 +23,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import { Mail } from 'lucide-react';
 import { Alert, Avatar, Button, Icon, Input, Link } from '@bridge-ds/react';
 import { GitHubMark } from '../studio/brand-icons';
-import { SignInScene } from './SignInScene';
+import { SignInPage } from './SignInPage';
 import ButtonLink from '../ButtonLink';
 import { ACCOUNT_WORDS as W, codeDigits, GITHUB_PENDING_KEY, CODE_LENGTH, defaultNext, PRIVACY_PAGE, readSignInQuery, RESEND_COOLDOWN, SIGNED_OUT_PARAM, signedOutNote, type Account, type SignedIn } from '../../../lib/account';
 import { ENTRY_SHOWN_KEY, ENTRY_WORDS as EW, INVITE_TOKEN_KEY, JOINED_KEY, entryStepOnce, inviteTokenFromHash, routeEntry, type Entry, type EntryRoute, type InviteLink } from '../../../lib/entry';
@@ -97,34 +97,6 @@ async function gitHubLogin(api: { workingGitHubToken: () => Promise<string | nul
   } catch {
     return null;
   }
-}
-
-/**
- * The page every step shares, so going from the email to the code to a room only changes the left column: the step
- * (with `foot` at the bottom of the column), then the one Harbor zone. The step comes first in the DOM too: it is the
- * reading order, the tab order and the phone order. The zone holds no action, so it never competes with the step.
- * `pitch`: what Bridge is, for the step that meets someone new (past it, they have chosen).
- */
-function SignInPage({ children, foot, pitch = false }: { children: ReactNode; foot?: ReactNode; pitch?: boolean }) {
-  return (
-    <div className="acc-page">
-      <div className="acc-pane">
-        {children}
-        {foot}
-      </div>
-      <div className="zone acc-zone">
-        <div className="acc-zone-text">
-          {pitch && (
-            <>
-              <p className="acc-pitch">{W.pitch}</p>
-              <p className="acc-pitch-lead">{W.pitchLead}</p>
-            </>
-          )}
-        </div>
-        <SignInScene />
-      </div>
-    </div>
-  );
 }
 
 export default function SignIn({ invite = false }: { invite?: boolean }) {

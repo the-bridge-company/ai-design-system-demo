@@ -64,7 +64,7 @@ const sample = (): MembersData => {
   return { context: 'real', repo: 'acme-design-demo/bridge-demo-ds', team: 'Acme Design', ...s, canManage: true, personal: false, complete: true, invites: true };
 };
 /** The invites server's refusal of a write by the sample team's visitor (api/invites demoRefusal). */
-const refused = () => Object.assign(new Error('Nothing is sent from Acme Design. Get started to do this with your own team.'), { name: 'InvitesError', status: 403, code: 'demo' });
+const refused = () => Object.assign(new Error('Nothing is sent from Acme Design. Request access to do this with your own team.'), { name: 'InvitesError', status: 403, code: 'demo' });
 
 const real = (over: Partial<MembersData> = {}): MembersData => ({
   context: 'real',

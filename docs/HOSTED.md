@@ -911,7 +911,7 @@ names and roles (`lib/recent-teams.ts forgetTeamEverywhere`).
 
 A Vercel cron (`crons` in `apps/docs-site/vercel.json`, daily at 03:17 UTC) calls `GET /api/account?export=1` with
 `Authorization: Bearer $CRON_SECRET`. The function writes a JSON of `bridge:account:*`, `bridge:member:*`,
-`bridge:members:*`, `bridge:invite:*` and `bridge:team:*` (never codes, counters or join requests) to Vercel Blob as a private file,
+`bridge:members:*`, `bridge:invite:*`, `bridge:team:*`, `bridge:access:request:*` and `bridge:access:queue` (never codes, counters or join requests) to Vercel Blob as a private file,
 `bridge-backups/accounts-<date>.json`, and keeps the last 30. Without `BLOB_READ_WRITE_TOKEN` it does nothing and
 logs a warning that names no one. Data stays in the Upstash region of each environment and in the Blob store's
 region; deleting an account removes it from Redis at once and from the backups within 30 days.
@@ -933,6 +933,32 @@ It reuses storage, Resend (`RESEND_API_KEY`, `INVITE_EMAIL_FROM`) and `LIBRARY_S
 
 Redeploy. `GET /api/account` answers `{ "available": true, "account": null }` once storage and the secret are set;
 the cron's run shows under the project's **Cron Jobs**.
+
+## Access requests
+
+Bridge opens on invitation. The demo is open to everyone; a team that wants Bridge on its own design system sends a
+request on `/request/` (the landing, pricing and the demo banner lead there), and the founder replies by hand within 2
+working days. The server piece is `apps/docs-site/api/access/index.ts`, words and field rules in
+`apps/docs-site/src/lib/access-request.ts`. It creates no account.
+
+- `POST /api/access { action: 'request', email, company, where?, fix }`, with `X-Bridge-Account: 1` and an Origin of
+  this site (CSRF, like `/api/account`). Work email, company (1 to 120 characters), where the design system lives
+  (optional, a full `https://` link, 300 at most) and what to fix first (1 to 300). Answers `{ ok, at }`, or
+  `{ ok, already: true, at }` when the email had asked before: the other fields are updated, `at` stays the first
+  request's time.
+- Storage: `bridge:access:request:<email>` (JSON: email, company, where, fix, at, status `pending`) and
+  `bridge:access:queue` (sorted set by the time of the first request). Both are in the daily backup.
+- Emails (Resend): the requester gets "Your Bridge request is in", replies going to the contact address; each address
+  of `BRIDGE_ADMIN_EMAILS` gets a short notice with the request, replies going to the requester. Without
+  `BRIDGE_ADMIN_EMAILS` no notice is sent, the queue still holds the request. A failed email never fails the request.
+- Caps per UTC day (counters under an HMAC of the email or network): 10 per network, 3 per email, 200 for the site.
+
+| Name                       | Value                                                                       |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `BRIDGE_ADMIN_EMAILS`      | Who is told of each request, comma separated: `florian@example.com`. Not sensitive |
+| `ACCESS_MAX_PER_IP_DAY`, `ACCESS_MAX_PER_EMAIL_DAY`, `ACCESS_MAX_SITE_DAY` | Optional: the daily caps above. Not sensitive |
+
+It reuses storage, `LIBRARY_SESSION_SECRET`, Resend (`RESEND_API_KEY`, `INVITE_EMAIL_FROM`) and `PUBLIC_SITE_URL`.
 
 ## Notifications
 

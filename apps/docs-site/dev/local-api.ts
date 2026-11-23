@@ -361,6 +361,8 @@ export function handlerFor(rel: string, mod: Mod, local: Local, method: string, 
   switch (rel) {
     case 'api/account/index.ts':
       return call('handleAccount', { redis, ...admins });
+    case 'api/access/index.ts':
+      return call('handleAccess', { redis });
     case 'api/entry/index.ts':
       return call('handleEntry', { redis, ...admins, ...apps });
     case 'api/contribute/index.ts':

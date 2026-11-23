@@ -11,6 +11,8 @@ export interface EmailMessage {
   html: string;
   /** Extra headers (List-Unsubscribe and List-Unsubscribe-Post on notifications). Only brevoSender sends them. */
   headers?: Record<string, string>;
+  /** Where a reply goes, when not the sender. Only resendSender sends it. */
+  replyTo?: string;
 }
 
 /** Sends one email; throws when the provider refuses it. */
@@ -43,7 +45,7 @@ export function resendSender(apiKey: string, from: string, f: FetchLike): EmailS
         res = await f('https://api.resend.com/emails', {
           method: 'POST',
           headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ from, to: [msg.to], subject: msg.subject, text: msg.text, html: msg.html }),
+          body: JSON.stringify({ from, to: [msg.to], subject: msg.subject, text: msg.text, html: msg.html, ...(msg.replyTo ? { reply_to: msg.replyTo } : {}) }),
         });
       } catch {
         throw new Error('email provider unreachable');

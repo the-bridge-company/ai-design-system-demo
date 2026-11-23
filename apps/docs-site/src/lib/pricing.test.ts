@@ -82,16 +82,17 @@ describe('pricing (/pricing/)', () => {
     const license = readFileSync(join(ROOT, 'LICENSE'), 'utf8');
     expect(license).toContain('FSL-1.1-MIT');
     expect(COMMITMENTS.map((c) => c.text).join(' ')).toContain('FSL-1.1-MIT');
-    expect(pricing.HERO_TITLE).toBe('Bridge is free today. Start your team by 31 March 2027 and it stays free.');
+    expect(pricing.HERO_TITLE).toBe('Bridge is free today. Request access by 31 March 2027 and your team stays free.');
     expect(FOUNDING_CUTOFF).toBe('2027-03-31');
-    expect(FOUNDING_TEXT[0]).toContain('created on Bridge by 31 March 2027 keeps');
+    expect(FOUNDING_TEXT[0]).toContain('requests access to Bridge by 31 March 2027 keeps');
+    expect(FOUNDING_TEXT[1]).toBe('Accept your invite within 30 days to keep your founding place. Teams already on Bridge are founding teams too, and people invited into a founding team are covered by that team.');
     // The billing code reads the same cutoff, exclusive: the day after.
     const next = new Date(`${FOUNDING_CUTOFF}T00:00:00Z`);
     next.setUTCDate(next.getUTCDate() + 1);
     expect(BILLING_LAUNCH_DATE).toBe(next.toISOString().slice(0, 10));
     expect(BILLING_LAUNCHED).toBe(false);
     expect(BILLING_EARLIEST_LAUNCH).toBe(pricing.PAID_PLANS_EARLIEST);
-    expect(FAQ[0].answer[0]).toBe('Not before 1 April 2027. We will write to every team at least 30 days before, with the final prices. Teams created by 31 March 2027 stay free.');
+    expect(FAQ[0].answer[0]).toBe('Not before 1 April 2027. We will write to every team at least 30 days before, with the final prices. Teams that request access by 31 March 2027, and teams already on Bridge, stay free.');
     expect(pricing.FAQ_OPEN).toBe(FAQ[0].id);
     expect(FAQ.map((f) => f.id)).toEqual(['when', 'fourth-editor', 'stop-paying', 'self-host', 'hosting', 'what-free-costs', 'vat', 'refunds', 'pricing-wrong', 'discounts', 'saml', 'shutdown']);
     const discounts = FAQ.find((f) => f.id === 'discounts')!;
@@ -122,6 +123,15 @@ describe('pricing (/pricing/)', () => {
     expect(terms).toContain('293 B');
     expect(terms).toContain('EUR 40');
     expect(terms).not.toMatch(/reverse-charge|Autoliquidation/);
+    // Version 3: founding follows the date of the access request; teams created before it stay founding.
+    expect(terms).toContain("const VERSION: string | null = '3';");
+    expect(terms).toContain("const EFFECTIVE_DATE: string | null = '24 November 2026';");
+    expect(terms).toContain('the first team created by a person whose access request was sent up to and including {FOUNDING_CUTOFF_LABEL}');
+    expect(terms).toContain('through an invite link we created up to and including {FOUNDING_CUTOFF_LABEL}');
+    expect(terms).toContain('is not accepted within 30 days after we send it');
+    expect(terms).toContain('People invited into a founding team are covered by that team');
+    expect(terms).toContain('A founding team created before {V3_DATE} keeps every right it had under this section 10.');
+    expect(terms).not.toContain('any team created on Bridge up to and including');
   });
 
   it('says prices are planned, gives no path to pay and keeps one primary action (the hero)', () => {
@@ -129,9 +139,9 @@ describe('pricing (/pricing/)', () => {
     expect(page).toContain('href={REQUEST} data-session-cta=""><span data-session-cta-label>Request access</span>');
     expect(pricing.HOME_FOUNDING.primary).toBe('Request access');
     expect(TIERS.filter((t) => t.badge).map((t) => t.id)).toEqual(['team', 'organization']);
-    expect(TIERS.find((t) => t.id === 'team')!.footerNote).toBe('Start today on Free. Created by 31 March 2027, your team never pays this.');
+    expect(TIERS.find((t) => t.id === 'team')!.footerNote).toBe('Start today on Free. Request access by 31 March 2027 and your team never pays this.');
     // The Free card says what a founding team keeps, so its limits never read as the founder's limits.
-    expect(TIERS.find((t) => t.id === 'free')!.founding).toEqual({ title: 'Created by 31 March 2027: no limits', text: 'A founding team keeps unlimited editors and design systems, free with no end date.' });
+    expect(TIERS.find((t) => t.id === 'free')!.founding).toEqual({ title: 'Requested by 31 March 2027: no limits', text: 'A founding team keeps unlimited editors and design systems, free with no end date.' });
     expect(page.match(/variant="primary"/g)).toHaveLength(1);
     expect(allWords).not.toMatch(/countdown|hurry|launch offer|checkout/i);
   });
@@ -139,15 +149,15 @@ describe('pricing (/pricing/)', () => {
   it('keeps every founding sentence word for word in the band, only the first subject changes', () => {
     const band = [...FOUNDING_FACTS.map((f) => f.text), FOUNDING_BAND_NOTE].join(' ');
     const [first, ...rest] = FOUNDING_TEXT;
-    expect(band).toContain(first.replace('Every team created on Bridge by 31 March 2027 keeps, at no cost and with no end date,', 'Your team keeps, at no cost,'));
+    expect(band).toContain(first.replace('Every team that requests access to Bridge by 31 March 2027 keeps, at no cost and with no end date,', 'Your team keeps, at no cost,'));
     expect(FOUNDING_FACTS[1].title).toBe('Free, with no end date');
     expect(band).not.toContain('with no end date');
     for (const sentence of rest.join(' ').split(/(?<=\.) /)) expect(band, sentence).toContain(sentence);
-    expect(FOUNDING_FACTS[0].title).toBe('31 March 2027');
+    expect(FOUNDING_FACTS[0]).toEqual({ title: '31 March 2027', text: 'The last day to request access for a founding team. Accept your invite within 30 days to keep your founding place.' });
   });
 
   it('puts the founding strip on every marketing page: FREE in a strong, a link to #founding', () => {
-    expect(pricing.STRIP.before + pricing.STRIP.strong + pricing.STRIP.after).toBe('Paid plans open in 2027. Teams created by 31 March 2027 stay FREE, with no end date.');
+    expect(pricing.STRIP.before + pricing.STRIP.strong + pricing.STRIP.after).toBe('Paid plans open in 2027. Teams that request access by 31 March 2027 stay FREE, with no end date.');
     const landing = readFileSync(join(ROOT, 'apps/docs-site/src/layouts/Landing.astro'), 'utf8');
     expect(landing).toContain('<AnnouncementStrip');
     expect(landing).toContain('<strong>{STRIP.strong}</strong>');

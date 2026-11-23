@@ -1,7 +1,7 @@
 // Request access, the pure parts (lib/access-request.ts): the field rules the page and api/access share, the date,
 // what this browser remembers, and the words in the Bridge voice.
 import { describe, expect, it } from 'vitest';
-import { ACCESS_DEMO, ACCESS_WORDS, accessDay, checkAccessRequest, emailFromQuery, isHttpsLink, oneLine, parseRemembered, REQUEST_PAGE } from './access-request';
+import { ACCESS_DEMO, ACCESS_WORDS, accessDay, checkAccessRequest, emailFromQuery, foundingRequest, isHttpsLink, oneLine, parisDay, parseRemembered, REQUEST_PAGE } from './access-request';
 import { CONTACT_EMAIL } from './pricing';
 import { DEMO, REQUEST } from './nav';
 
@@ -58,16 +58,26 @@ describe('the request page rules', () => {
     expect(emailFromQuery('')).toBe('');
   });
 
+  it('a request sent by 31 March 2027, Paris time, reserves a founding place; one sent after does not', () => {
+    expect(foundingRequest('2026-11-23T10:00:00.000Z')).toBe(true);
+    expect(foundingRequest('2027-03-31T21:59:59.000Z')).toBe(true);
+    expect(foundingRequest('2027-03-31T22:00:00.000Z')).toBe(false);
+    expect(foundingRequest('2027-04-01T09:00:00.000Z')).toBe(false);
+    expect(foundingRequest('nope')).toBe(false);
+    expect(parisDay('2027-03-31T21:59:59.000Z')).toBe('2027-03-31');
+  });
+
   it('points to the same demo and request page as the site nav', () => {
     expect(ACCESS_DEMO).toBe(DEMO);
     expect(REQUEST_PAGE).toBe(REQUEST);
     expect(REQUEST_PAGE).toBe('/request/');
   });
 
-  it('speaks in the Bridge voice: no em dash, no founding promise, the contact address when closed', () => {
+  it('speaks in the Bridge voice: no em dash, the founding place only as terms 10.1 says it, the contact address when closed', () => {
     const all = Object.values(ACCESS_WORDS).flat().join('\n');
     expect(all).not.toMatch(/—/);
-    expect(all).not.toMatch(/founding|place saved|31 March/i);
+    expect(ACCESS_WORDS.foundingSaved).toBe('Your founding place is saved.');
+    expect(all).not.toMatch(/31 March|no limits|forever/i);
     expect(ACCESS_WORDS.unavailable).toContain(CONTACT_EMAIL);
     expect(ACCESS_WORDS.submit).toBe('Request access');
   });

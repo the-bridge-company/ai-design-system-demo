@@ -11,7 +11,7 @@ const phone = {
 
 const message = (
   <>
-    Paid plans open in 2027. Teams created by 31 March 2027 stay <strong>FREE</strong>, with no end date.
+    Paid plans open in 2027. Teams that request access by 31 March 2027 stay <strong>FREE</strong>, with no end date.
   </>
 );
 

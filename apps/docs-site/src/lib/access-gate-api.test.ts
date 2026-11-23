@@ -300,7 +300,8 @@ describe("the founder's queue", () => {
     const mail = s.sent.at(-1)!;
     expect(mail.to).toBe('ana+x@acme.example');
     expect(mail.subject).toBe('Your Bridge access is open');
-    expect(mail.text).toContain('Use this email to sign in. Your access stays open for 30 days.');
+    // Asked on 25 November 2026, before the founding cutoff: the 30 days also keep the founding place (terms 10.1).
+    expect(mail.text).toContain('Use this email to sign in. Accept within 30 days to keep your founding place.');
     expect(mail.text).toContain('https://bridge.test/signin/?email=ana%2Bx%40acme.example');
     expect(mail.html).toContain('Sign in to Bridge');
     expect(mail.html).toContain('href="https://bridge.test/signin/?email=ana%2Bx%40acme.example"');

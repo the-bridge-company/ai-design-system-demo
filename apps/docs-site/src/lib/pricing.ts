@@ -64,8 +64,10 @@ export const TEAM_DESIGN_SYSTEMS = 3;
 // ---------------------------------------------------------------------------------------------------------------
 
 /**
- * Founding teams: every team created on Bridge up to this day, included (ISO, Paris calendar day). The billing code
- * reads the same cutoff as BILLING_LAUNCH_DATE = the next day, exclusive (lib/billing.ts; pricing.test checks both).
+ * Founding teams (terms version 3, section 10.1): every team whose access request is sent up to this day, included
+ * (ISO, Paris calendar day), or that joins through an invite link created by then, plus every team created before
+ * version 3 (24 November 2026). The billing code reads the same cutoff as BILLING_LAUNCH_DATE = the next day,
+ * exclusive (lib/billing.ts; pricing.test checks both).
  */
 export const FOUNDING_CUTOFF = '2027-03-31';
 export const FOUNDING_CUTOFF_LABEL = '31 March 2027';
@@ -154,9 +156,9 @@ export const BILLING_LABEL: Record<Billing, string> = { yearly: 'Yearly', monthl
 // ---------------------------------------------------------------------------------------------------------------
 
 // Pricing A "Founding first" (Claude Design canvas, page "Site · Pricing & founding", board Wip-site-pricing-A).
-export const HERO_TITLE = `Bridge is free today. Start your team by ${FOUNDING_CUTOFF_LABEL} and it stays free.`;
+export const HERO_TITLE = `Bridge is free today. Request access by ${FOUNDING_CUTOFF_LABEL} and your team stays free.`;
 /** "terms of service" in it links to /terms/. */
-export const HERO_LEAD = `Every tier has every feature. Paid plans open in ${PAID_PLANS_OPEN}, at the planned prices below. A team created by ${FOUNDING_CUTOFF_LABEL} never moves to them: it is written in our terms of service.`;
+export const HERO_LEAD = `Every tier has every feature. Paid plans open in ${PAID_PLANS_OPEN}, at the planned prices below. A team that requests access by ${FOUNDING_CUTOFF_LABEL} never moves to them: it is written in our terms of service.`;
 /** How people sign in today, one wording everywhere (/privacy/, /terms/ 3.1). There is no Google or Microsoft sign-in. */
 export const SIGN_IN = 'Sign in with GitHub or a code sent to your email, on every tier. SAML on your own identity provider is Organization.';
 export const HERO_NOTE = 'No card needed. Access opens in small groups. We reply within 2 working days.';
@@ -190,7 +192,7 @@ export const TIERS: Tier[] = [
     pitch: 'For a small team getting started.',
     includes: [`Up to ${inWords(FREE_EDITORS)} editors`, 'Unlimited readers', 'One design system', 'Every feature'],
     founding: {
-      title: `Created by ${FOUNDING_CUTOFF_LABEL}: no limits`,
+      title: `Requested by ${FOUNDING_CUTOFF_LABEL}: no limits`,
       text: 'A founding team keeps unlimited editors and design systems, free with no end date.',
     },
     cta: 'Request access',
@@ -201,7 +203,7 @@ export const TIERS: Tier[] = [
     pitch: 'At most {cap} a month per design system: editors past ten cost nothing.',
     includes: ['Everything in Free', 'Unlimited editors', `Up to ${inWords(TEAM_DESIGN_SYSTEMS)} design systems`, 'Written support, answer within two business days'],
     badge: OPENS_BADGE,
-    footerNote: `Start today on Free. Created by ${FOUNDING_CUTOFF_LABEL}, your team never pays this.`,
+    footerNote: `Start today on Free. Request access by ${FOUNDING_CUTOFF_LABEL} and your team never pays this.`,
   },
   {
     id: 'organization',
@@ -244,9 +246,17 @@ export const EDITOR_TEXT = 'anyone who proposes or decides in Studio. Readers, v
 /** Founding teams. Wording decided by Florian. */
 // This text is a commitment, written in full in the terms of service, section 10 (pages/terms.astro). The page links
 // "terms of service" in the last line to /terms/.
+/**
+ * Who else is a founding team, and how a place is kept (terms 10.1): said once in FOUNDING_TEXT and once in the band
+ * note, with the same words. Wording approved by Florian (Bridge on invitation, PR C).
+ */
+export const FOUNDING_KEEP = 'Accept your invite within 30 days to keep your founding place.';
+export const FOUNDING_ALREADY = 'Teams already on Bridge are founding teams too, and people invited into a founding team are covered by that team.';
+export const FOUNDING_WHO = `${FOUNDING_KEEP} ${FOUNDING_ALREADY}`;
 export const FOUNDING_TITLE = 'Founding teams';
 export const FOUNDING_TEXT = [
-  `Every team created on Bridge by ${FOUNDING_CUTOFF_LABEL} keeps, at no cost and with no end date, everything it can do the day paid plans open: all its editors, all its design systems, every feature, plus anything the Free tier gains later.`,
+  `Every team that requests access to Bridge by ${FOUNDING_CUTOFF_LABEL} keeps, at no cost and with no end date, everything it can do the day paid plans open: all its editors, all its design systems, every feature, plus anything the Free tier gains later.`,
+  FOUNDING_WHO,
   'No future price change applies to it. Support and uptime stay those of Free.',
   FAIR_USE,
   'If we ever stop the hosted service, we tell you at least six months ahead and give you a full export you can host yourself without limit.',
@@ -255,28 +265,28 @@ export const FOUNDING_TEXT = [
 
 /**
  * The Harbor band of /pricing/ (#founding): three facts, then the rest, sentence by sentence from FOUNDING_TEXT. Only
- * the first sentence changes: its subject ("Every team created on Bridge by 31 March 2027") becomes the first fact and
+ * the first sentence changes: its subject ("Every team that requests access to Bridge by 31 March 2027") becomes the first fact and
  * "Your team", and "with no end date" is said once, by the second fact's title. Every other sentence is FOUNDING_TEXT
  * word for word (pricing.test checks it). /terms/ section 10 keeps the full commitment.
  */
 export const FOUNDING_BAND_TITLE = 'The founding team commitment';
 export const FOUNDING_BAND_LINK = 'Read it in our terms of service';
 export const FOUNDING_FACTS: { title: string; text: string }[] = [
-  { title: FOUNDING_CUTOFF_LABEL, text: 'The last day to create a founding team on Bridge.' },
+  { title: FOUNDING_CUTOFF_LABEL, text: `The last day to request access for a founding team. ${FOUNDING_KEEP}` },
   {
     title: 'Free, with no end date',
     text: 'Your team keeps, at no cost, everything it can do the day paid plans open: all its editors, all its design systems, every feature, plus anything the Free tier gains later.',
   },
   { title: 'In writing', text: 'This commitment is part of our terms of service and binds anyone who takes Bridge over. No future price change applies to it.' },
 ];
-export const FOUNDING_BAND_NOTE = `Support and uptime stay those of Free. ${FAIR_USE} ${'If we ever stop the hosted service, we tell you at least six months ahead and give you a full export you can host yourself without limit.'}`;
+export const FOUNDING_BAND_NOTE = `${FOUNDING_ALREADY} Support and uptime stay those of Free. ${FAIR_USE} ${'If we ever stop the hosted service, we tell you at least six months ahead and give you a full export you can host yourself without limit.'}`;
 
 /** Home B: the founding section before the last call. The board's "why" sentence waits for Florian's words. */
 export const HOME_FOUNDING = {
   eyebrow: 'Founding teams',
-  title: `Start your team by ${FOUNDING_CUTOFF_LABEL}. It stays free.`,
+  title: `Request access by ${FOUNDING_CUTOFF_LABEL}. Your team stays free.`,
   /** The title as drawn: "free" in the brand blue (HpFounding). Together they read exactly `title`. */
-  titleLead: `Start your team by ${FOUNDING_CUTOFF_LABEL}. It stays `,
+  titleLead: `Request access by ${FOUNDING_CUTOFF_LABEL}. Your team stays `,
   titleAccent: 'free',
   titleEnd: '.',
   primary: 'Request access',
@@ -291,7 +301,7 @@ export const HOME_FOUNDING = {
 /** Home C: the strip above the site header on every marketing page. "FREE" is shown in capitals, in a strong. */
 export const STRIP = {
   label: 'Founding teams',
-  before: `Paid plans open in ${PAID_PLANS_OPEN}. Teams created by ${FOUNDING_CUTOFF_LABEL} stay `,
+  before: `Paid plans open in ${PAID_PLANS_OPEN}. Teams that request access by ${FOUNDING_CUTOFF_LABEL} stay `,
   strong: 'FREE',
   after: ', with no end date.',
 };
@@ -351,7 +361,7 @@ export const FAQ: FaqItem[] = [
     id: 'when',
     question: 'When do paid plans open?',
     answer: [
-      `Not before ${PAID_PLANS_EARLIEST_LABEL}. We will write to every team at least 30 days before, with the final prices. Teams created by ${FOUNDING_CUTOFF_LABEL} stay free.`,
+      `Not before ${PAID_PLANS_EARLIEST_LABEL}. We will write to every team at least 30 days before, with the final prices. Teams that request access by ${FOUNDING_CUTOFF_LABEL}, and teams already on Bridge, stay free.`,
     ],
   },
   {

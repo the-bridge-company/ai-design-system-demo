@@ -19,7 +19,7 @@ import { escHtml, mailButton, mailLink, mailP, mailPage, mailQuote, type EmailMe
 import { b64url, sha256 } from './http.js';
 import type { Redis } from './redis.js';
 import { canonicalEmail, emailSpellings } from './canonical-email.js';
-import { accessDay, ACCESS_APPROVAL_MS, linkStateOf, oneLine, type AccessLinkState, type AccessRequestInput } from '../../src/lib/access-request.js';
+import { accessDay, ACCESS_APPROVAL_MS, foundingRequest, linkStateOf, oneLine, type AccessLinkState, type AccessRequestInput } from '../../src/lib/access-request.js';
 
 export const ACCESS_QUEUE_KEY = 'bridge:access:queue';
 export const accessRequestKey = (email: string) => `bridge:access:request:${email.trim().toLowerCase()}`;
@@ -179,10 +179,13 @@ export const accessGateOn = (v: string | undefined): boolean => (v ?? '').trim()
 /** True for an address of BRIDGE_ADMIN_EMAILS (any spelling of the same mailbox). */
 export const isAdminEmail = (env: string | undefined, email: string): boolean => adminEmails(env).some((a) => canonicalEmail(a) === canonicalEmail(email));
 
-/** "You're in": the founder invited this email. One button, to sign in with this very address. */
-export function accessInvitedEmail(x: { to: string; signIn: string; replyTo?: string }): EmailMessage {
+/**
+ * "You're in": the founder invited this email. One button, to sign in with this very address. `founding`: the request
+ * was sent by the founding cutoff (foundingRequest), so the 30 days also keep its founding place (terms 10.1).
+ */
+export function accessInvitedEmail(x: { to: string; signIn: string; founding?: boolean; replyTo?: string }): EmailMessage {
   const subject = 'Your Bridge access is open';
-  const line = 'Use this email to sign in. Your access stays open for 30 days.';
+  const line = x.founding ? 'Use this email to sign in. Accept within 30 days to keep your founding place.' : 'Use this email to sign in. Your access stays open for 30 days.';
   const text = ["You're in. Bridge is ready for your design system.", '', `Sign in to Bridge: ${x.signIn}`, '', line, '', 'Reply to this email if you have a question.'].join('\n');
   const html = mailPage({
     subject,
@@ -212,12 +215,17 @@ export function accessNotYetEmail(x: { to: string; note: string; demo: string; r
   return { to: x.to, subject, text, html, ...(x.replyTo ? { replyTo: x.replyTo } : {}) };
 }
 
-/** To the person who asked: it is in, when we answer, the demo meanwhile. */
-export function accessConfirmationEmail(x: { to: string; demo: string; replyTo?: string }): EmailMessage {
+/**
+ * To the person who asked: it is in, when we answer, the demo meanwhile. `at`: the first request's time; sent by the
+ * founding cutoff (foundingRequest), the email says the founding place is saved, with that day (terms 10.1).
+ */
+export function accessConfirmationEmail(x: { to: string; demo: string; at?: string; replyTo?: string }): EmailMessage {
   const subject = 'Your Bridge request is in';
+  const founding = x.at && foundingRequest(x.at) ? `Sent on ${accessDay(x.at)}. Your founding place is saved.` : '';
   const text = [
     'Thanks. We read every request and reply within 2 working days.',
     '',
+    ...(founding ? [founding, ''] : []),
     `Until then, the demo is open: ${x.demo}`,
     '',
     'Reply to this email if you have a question.',
@@ -225,7 +233,7 @@ export function accessConfirmationEmail(x: { to: string; demo: string; replyTo?:
   const html = mailPage({
     subject,
     preheader: 'We read every request and reply within 2 working days.',
-    body: [mailP('Thanks. We read every request and reply within 2 working days.'), mailP(`Until then, the demo is open: ${mailLink(x.demo, 'open the demo')}.`, true)].join('\n'),
+    body: [mailP('Thanks. We read every request and reply within 2 working days.'), ...(founding ? [mailP(escHtml(founding))] : []), mailP(`Until then, the demo is open: ${mailLink(x.demo, 'open the demo')}.`, true)].join('\n'),
     footer: 'Reply to this email if you have a question.',
   });
   return { to: x.to, subject, text, html, ...(x.replyTo ? { replyTo: x.replyTo } : {}) };

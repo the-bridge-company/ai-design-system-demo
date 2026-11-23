@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { memoryRedis } from '../../api/_lib/redis';
 import type { EmailMessage, EmailSender } from '../../api/_lib/email';
-import { ACCESS_QUEUE_KEY, accessRequestKey, adminEmails } from '../../api/_lib/access';
+import { ACCESS_QUEUE_KEY, accessInvitedEmail, accessRequestKey, adminEmails } from '../../api/_lib/access';
 import { ACCESS_LIMITS_DAY, handleAccess, type AccessDeps } from '../../api/access/index';
 import { EXPORT_PATTERNS } from '../../api/account/index';
 import { CONTACT_EMAIL } from './pricing';
@@ -144,7 +144,7 @@ describe('POST /api/access', () => {
     for (const k of keys) expect(k).not.toMatch(/acme|203\.0\.113/);
   });
 
-  it('sends the requester the confirmation, with the demo link and replies to the contact address', async () => {
+  it('sends the requester the confirmation, with the founding place, the demo link and replies to the contact address', async () => {
     const s = setup();
     await handleAccess(post(GOOD), ENV, s.deps);
     expect(s.sent).toHaveLength(1);
@@ -156,13 +156,32 @@ describe('POST /api/access', () => {
       [
         'Thanks. We read every request and reply within 2 working days.',
         '',
+        'Sent on 23 November 2026. Your founding place is saved.',
+        '',
         'Until then, the demo is open: https://bridgedesignsystem.com/studio/acme-design-demo/bridge-demo-ds/',
         '',
         'Reply to this email if you have a question.',
       ].join('\n'),
     );
+    expect(m!.html).toContain('Sent on 23 November 2026. Your founding place is saved.');
     expect(m!.html).toContain('href="https://bridgedesignsystem.com/studio/acme-design-demo/bridge-demo-ds/"');
-    for (const t of [m!.text, m!.html]) expect(t).not.toMatch(/—|founding/i);
+    for (const t of [m!.text, m!.html]) expect(t).not.toMatch(/—/);
+  });
+
+  it("the \"You're in\" email names the founding place only for a founding request", () => {
+    const signIn = 'https://bridge.example.com/signin/?email=ana%40acme.com';
+    expect(accessInvitedEmail({ to: 'ana@acme.com', signIn, founding: true }).text).toContain('Use this email to sign in. Accept within 30 days to keep your founding place.');
+    const late = accessInvitedEmail({ to: 'ana@acme.com', signIn, founding: false });
+    expect(late.text).toContain('Use this email to sign in. Your access stays open for 30 days.');
+    for (const t of [late.text, late.html]) expect(t).not.toMatch(/founding/i);
+  });
+
+  it('says no founding place for a request sent after 31 March 2027, Paris time', async () => {
+    const s = setup();
+    s.tick(Date.parse('2027-03-31T22:00:00Z') - Date.parse('2026-11-23T10:00:00Z'));
+    await handleAccess(post(GOOD), ENV, s.deps);
+    const [m] = s.sent;
+    for (const t of [m!.text, m!.html]) expect(t).not.toMatch(/founding/i);
   });
 
   it('tells the founders of BRIDGE_ADMIN_EMAILS, every field escaped, replies going to the requester', async () => {

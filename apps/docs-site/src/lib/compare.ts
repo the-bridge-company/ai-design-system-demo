@@ -143,9 +143,9 @@ export const SHORT: CompareRow[] = [
   },
   {
     feature: 'Free with every feature, today',
-    detail: 'Paid plans from 2027. Teams created by 31 March 2027 stay free',
+    detail: 'Paid plans from 2027. Teams that request access by 31 March 2027 stay free',
     cells: [
-      y('Free for every team today, with every feature. Paid plans open in 2027; teams created by 31 March 2027 stay free, and self-hosting has no limit on any tier.'),
+      y('Free for every team today, with every feature. Paid plans open in 2027; teams that request access by 31 March 2027 stay free, and self-hosting has no limit on any tier.'),
       n,
       n,
       y('Chromatic, its visual testing service, is paid.', 'Chromatic is paid'),

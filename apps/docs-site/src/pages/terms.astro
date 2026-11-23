@@ -39,9 +39,16 @@ import {
 } from '../lib/pricing';
 import { PUBLISHER } from '../lib/legal';
 
-/** Version 1, effective 16 November 2026 (the day the pricing page was published). Version 2 adds fair use of the hosted service (8.4). */
-const VERSION: string | null = '2';
-const EFFECTIVE_DATE: string | null = '21 November 2026';
+/**
+ * Version 1, effective 16 November 2026 (the day the pricing page was published). Version 2 adds fair use of the hosted
+ * service (8.4). Version 3 (Bridge on invitation): sign-up is by request (2, 3.2), a founding team is one whose access
+ * request is sent by the cutoff or that joins through an invite link created by then, a place lapses 30 days after an
+ * invite not accepted, teams created before version 3 stay founding (10.1, 10.8).
+ */
+const VERSION: string | null = '3';
+const EFFECTIVE_DATE: string | null = '24 November 2026';
+/** The day version 3 took effect: teams created before it are founding teams (10.1 (a), 10.8). */
+const V3_DATE = '24 November 2026';
 // TO DECIDE (Florian): adding editors during a period: billed pro rata for the rest of the period, or from the next renewal.
 const ADDED_EDITORS_BILLING: string | null = null;
 // TO DECIDE (Florian): notice before a price change or a new version of these terms applies (30 days proposed).
@@ -83,7 +90,7 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
       <h1 class="pv-title">Terms of service</h1>
       {VERSION && EFFECTIVE_DATE && <p class="pv-lead">Version {VERSION}, effective {EFFECTIVE_DATE}.</p>}
       <p class="pv-lead">
-        These terms are the contract between you and Bridge. They apply to every plan, including Free. Please read them before you create a team. If anything here is unclear, write to <Link href={mail}>{CONTACT_EMAIL}</Link>.
+        These terms are the contract between you and Bridge. They apply to every plan, including Free. Please read them before you request access or create a team. If anything here is unclear, write to <Link href={mail}>{CONTACT_EMAIL}</Link>.
       </p>
     </header>
 
@@ -105,13 +112,13 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 
     <section class="pv-section" aria-labelledby="t2">
       <h2 id="t2" class="pv-h">2. Who Bridge is for</h2>
-      <p>Bridge is a professional tool. By creating a team or starting a paid plan, you confirm that you act for the purposes of your trade, business, craft or profession, and not as a consumer. If you sign up on behalf of an organisation, you confirm that you are allowed to bind it to these terms.</p>
+      <p>Bridge is a professional tool. By requesting access, creating a team or starting a paid plan, you confirm that you act for the purposes of your trade, business, craft or profession, and not as a consumer. If you sign up on behalf of an organisation, you confirm that you are allowed to bind it to these terms.</p>
     </section>
 
     <section class="pv-section" aria-labelledby="t3">
       <h2 id="t3" class="pv-h">3. Accounts and teams</h2>
       <p>3.1 You sign in with GitHub or with a code sent to your email. Bridge has no passwords. Keep access to your email and GitHub account secure: anything done from your account is treated as done by you.</p>
-      <p>3.2 A team is the space where your people work on one or more design systems. Each team has at least one admin. Admins invite and remove members, choose roles and manage the plan.</p>
+      <p>3.2 A team is the space where your people work on one or more design systems. Bridge opens on invitation: you request access on our website and we reply with an invite, or you join through an invite link we send or a team's invite. Each team has at least one admin. Admins invite and remove members, choose roles and manage the plan.</p>
       <p>3.3 An "editor" is a team member who can propose or approve changes to a design system. People who only view are not editors. The roles available, and which ones count as editors, are shown in the product and on the <Link href={PRICING}>pricing page</Link>.</p>
       <p>3.4 Your design system stays in your own repository. Bridge reads it from GitHub and keeps only short-lived copies, as described in the <Link href={PRIVACY_PAGE}>privacy policy</Link>.</p>
       <p>3.5 You are responsible for what your team puts into Bridge and for having the rights to it. You must not use Bridge to break the law, to infringe someone else's rights, to attack or overload the service, or to get around plan limits by technical means.</p>
@@ -215,7 +222,13 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
 
     <section class="pv-section" aria-labelledby="t10">
       <h2 id="t10" class="pv-h">10. Founding teams</h2>
-      <p>10.1 Who. A founding team is any team created on Bridge up to and including {FOUNDING_CUTOFF_LABEL}.</p>
+      <p>10.1 Who. A founding team is:</p>
+      <ul>
+        <li>(a) any team created on Bridge before {V3_DATE};</li>
+        <li>(b) the first team created by a person whose access request was sent up to and including {FOUNDING_CUTOFF_LABEL}; or</li>
+        <li>(c) the first team created by a person who joins Bridge through an invite link we created up to and including {FOUNDING_CUTOFF_LABEL}.</li>
+      </ul>
+      <p>The date of a request is the day, Paris time, of the first request sent from that email. A request reserves a founding place. That place lapses if the invite we send in reply is not accepted within 30 days after we send it; accepting means signing in to Bridge with the invited email. People invited into a founding team are covered by that team; joining one does not make another team founding.</p>
       <p>10.2 What they keep. For as long as this commitment lasts (section 10.4), a founding team keeps, at no charge:</p>
       <ul>
         <li>everything it can do on the day paid plans open{FOUNDING_SNAPSHOT_URL && <>, as listed in the <Link href={FOUNDING_SNAPSHOT_URL}>founding snapshot</Link></>}; and</li>
@@ -233,6 +246,7 @@ const notice = CHANGE_NOTICE_DAYS ? `at least ${CHANGE_NOTICE_DAYS} days ` : '';
       <p>10.5 If Bridge changes hands. If the Bridge service, or the business that runs it, is sold, contributed or otherwise transferred, Bridge will transfer the contracts with founding teams together with the service, and will require the acquirer to take over this section 10 in full. Each founding team agrees now, in advance, to that transfer of its contract, which will take effect for it once it has been notified. Bridge guarantees (se porte fort) that the acquirer will honour this section; if the acquirer does not, Bridge remains liable for the consequences. No transfer of the service may be made in a way that removes these rights.</p>
       <p>10.6 Changes to these terms (section 16) cannot reduce the rights in this section 10 for an existing founding team without that team's written agreement.</p>
       <p>10.7 A founding team created before version 2 of these terms (21 November 2026) keeps section 10 as written in version 1, without the fair use reference in 10.2, unless it agrees in writing to version 2.</p>
+      <p>10.8 Version 3 of these terms ({V3_DATE}) changes only who becomes a founding team (10.1). A founding team created before {V3_DATE} keeps every right it had under this section 10.</p>
     </section>
 
     <section class="pv-section" aria-labelledby="t11">

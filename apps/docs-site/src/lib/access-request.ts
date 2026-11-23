@@ -5,6 +5,7 @@
 
 import { SAMPLE_REPO } from './demo.js';
 import { STUDIO_ROOT } from './team-path.js';
+import { FOUNDING_CUTOFF } from './pricing.js';
 
 /** The request page (the landing, pricing and the demo lead here). */
 export const REQUEST_PAGE = '/request/';
@@ -42,6 +43,8 @@ export const ACCESS_WORDS = {
   pendingTitle: 'Your request is waiting for review',
   /** "We reply to ana@acme.com within 2 working days." */
   pendingLead: ['We reply to ', ' within 2 working days.'] as const,
+  /** After the lead, for a request sent by the founding cutoff (terms 10.1, foundingRequest). */
+  foundingSaved: 'Your founding place is saved.',
   steps: 'Your request',
   stepSent: 'Sent',
   stepReviewed: 'Reviewed',
@@ -107,6 +110,22 @@ export function accessDay(iso: string): string {
   if (Number.isNaN(d.getTime())) return '';
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d);
 }
+
+/** The Paris calendar day of an ISO time, YYYY-MM-DD; '' for anything else. */
+export function parisDay(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Paris' }).format(d);
+}
+
+/**
+ * A request sent up to the founding cutoff, included (Paris day, terms 10.1): it reserves a founding place, kept if
+ * the invite is accepted within 30 days (ACCESS_APPROVAL_MS).
+ */
+export const foundingRequest = (at: string): boolean => {
+  const day = parisDay(at);
+  return Boolean(day) && day <= FOUNDING_CUTOFF;
+};
 
 export interface RememberedRequest {
   email: string;

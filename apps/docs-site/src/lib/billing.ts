@@ -18,9 +18,10 @@ export const BILLING_EARLIEST_LAUNCH = '2027-04-01';
 
 /**
  * The founding cutoff, exclusive (ISO, YYYY-MM-DD, read as midnight UTC): every team made in Bridge before it is a
- * founding team, never limited, never billed. The pricing page publishes it as "teams created by 31 March 2027"
- * (lib/pricing.ts FOUNDING_CUTOFF, the day before; pricing.test checks both). Teams Bridge only knows by their
- * repository are marked founding by hand before paid plans open (docs/BILLING.md). Null: every team counts as founding.
+ * founding team, never limited, never billed. The pricing page publishes the cutoff as "teams that request access by
+ * 31 March 2027" (lib/pricing.ts FOUNDING_CUTOFF, the day before; pricing.test checks both; terms 10.1). Teams Bridge
+ * only knows by their repository, and teams made after the cutoff from a founding request or invite link, are marked
+ * founding by hand before paid plans open (docs/BILLING.md). Null: every team counts as founding.
  */
 export const BILLING_LAUNCH_DATE: string | null = '2027-04-01';
 

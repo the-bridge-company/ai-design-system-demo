@@ -1,15 +1,15 @@
 {
   "version": 1,
   "tool": "@bridge-ds/visual",
-  "createdAt": "2026-11-23T23:35:34.006Z",
-  "durationMs": 184659,
+  "createdAt": "2026-11-23T23:40:45.801Z",
+  "durationMs": 171845,
   "base": {
     "ref": "cecec59d7032dc630a82eb509dea0b1da31c2078",
     "sha": "cecec59d7032dc630a82eb509dea0b1da31c2078"
   },
   "head": {
-    "ref": "02651d93829f34c148119d7c2ea2f39cd227d158",
-    "sha": "02651d93829f34c148119d7c2ea2f39cd227d158"
+    "ref": "faee17c9caaa7544cca403edbd4d1ebfdae5a2c4",
+    "sha": "faee17c9caaa7544cca403edbd4d1ebfdae5a2c4"
   },
   "options": {
     "only": [
@@ -37,6 +37,8 @@
       "apps/docs-site/api/access/index.ts",
       "apps/docs-site/src/components/ds/account/RequestAccess.test.ts",
       "apps/docs-site/src/components/ds/account/RequestAccess.tsx",
+      "apps/docs-site/src/components/ds/account/SignIn.tsx",
+      "apps/docs-site/src/components/ds/account/SignInAccess.test.ts",
       "apps/docs-site/src/lib/access-gate-api.test.ts",
       "apps/docs-site/src/lib/access-request-api.test.ts",
       "apps/docs-site/src/lib/access-request.test.ts",
@@ -82,7 +84,7 @@
     "added": 0,
     "removed": 0,
     "errors": 0,
-    "maxPercent": 0.41
+    "maxPercent": 5.6
   },
   "shots": [
     {
@@ -489,15 +491,21 @@
       "brand": "ocean",
       "theme": "dark",
       "status": "changed",
-      "changedPixels": 3247,
+      "changedPixels": 44002,
       "totalPixels": 786432,
-      "percent": 0.41,
+      "percent": 5.6,
       "boxes": [
         {
           "x": 96,
           "y": 32,
           "width": 832,
           "height": 32
+        },
+        {
+          "x": 16,
+          "y": 704,
+          "width": 992,
+          "height": 48
         }
       ],
       "size": {

@@ -65,6 +65,14 @@ describe('vercel-ignore decide', () => {
     expect(decide('docs', { ref: 'main' }, git)).toMatchObject({ build: true, base: 'HEAD^' });
   });
 
+  it('on main, a redeploy of the commit already live builds even when nothing changed', () => {
+    const sha = 'a'.repeat(40);
+    const { git, calls } = fakeGit();
+    expect(decide('docs', { ref: 'main', previousSha: sha, commitSha: sha }, git)).toMatchObject({ build: true });
+    expect(calls).toEqual([]);
+    expect(decide('docs', { ref: 'main', previousSha: 'abc', commitSha: sha }, fakeGit({ diffs: { abc: ['apps/admin/x.tsx'] } }).git).build).toBe(false);
+  });
+
   it('on a branch, diffs against the merge-base with main, so earlier commits of the first push count', () => {
     // HEAD^ only touched the admin app, but an earlier commit of the branch changed the docs site.
     const { git, calls } = fakeGit({ bases: ['mb1'], diffs: { mb1: ['apps/docs-site/a.ts', 'apps/admin/b.tsx'], 'HEAD^': ['apps/admin/b.tsx'] } });

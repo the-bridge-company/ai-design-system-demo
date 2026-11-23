@@ -89,10 +89,12 @@ describe('sign-in, Bridge on invitation', () => {
   });
 
   it('says who invited on an access link, sends its token with the code, then forgets it', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-11-24T10:00:00Z'));
     history.replaceState(null, '', `/signin/?access=${TOKEN}`);
     const { container } = render(createElement(SignIn));
     expect(await screen.findByRole('heading', { name: "You're invited to the Bridge beta" })).toBeInTheDocument();
-    expect(screen.getByText('Hi Ana at Acme, Florian opened early access to Bridge for you. Sign in with your work email to start.')).toBeInTheDocument();
+    // Before the founding cutoff (24 November 2026 here): the founding sentence follows (terms 10.1 (c)).
+    expect(screen.getByText('Hi Ana at Acme, Florian opened early access to Bridge for you. Sign in with your work email to start. Join by 31 March 2027 and your team stays free, with no end date.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send code' }).className).toMatch(/primary/);
     // Out of the address bar at once, kept in this tab (for GitHub and back).
     expect(location.search).toBe('');
@@ -133,8 +135,11 @@ describe('sign-in, Bridge on invitation', () => {
   it('a link with no label says "Hi," and still who opened access', async () => {
     link = { valid: true, label: '', inviter: '', expiresAt: '2026-12-07T10:00:00.000Z' };
     history.replaceState(null, '', `/signin/?access=${TOKEN}`);
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2027-03-31T22:00:00Z'));
     render(createElement(SignIn));
+    // 1 April 2027 in Paris: after the founding cutoff, no founding sentence.
     expect(await screen.findByText('Hi, Florian opened early access to Bridge for you. Sign in with your work email to start.')).toBeInTheDocument();
+    expect(screen.queryByText(/Join by/)).toBeNull();
   });
 
   it('signed in already on a live link: the invitation stays, Continue goes on without taking a use', async () => {

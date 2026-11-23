@@ -5,7 +5,7 @@
 
 import { SAMPLE_REPO } from './demo.js';
 import { STUDIO_ROOT } from './team-path.js';
-import { FOUNDING_CUTOFF } from './pricing.js';
+import { FOUNDING_CUTOFF, FOUNDING_DATE } from './pricing.js';
 
 /** The request page (the landing, pricing and the demo lead here). */
 export const REQUEST_PAGE = '/request/';
@@ -127,6 +127,9 @@ export const foundingRequest = (at: string): boolean => {
   return Boolean(day) && day <= FOUNDING_CUTOFF;
 };
 
+/** Today (`now`, ms) is still on or before the founding cutoff, Paris day: an invite link opened now can found a team. */
+export const foundingOpen = (now: number): boolean => foundingRequest(new Date(now).toISOString());
+
 export interface RememberedRequest {
   email: string;
   at: string;
@@ -195,6 +198,8 @@ export const GATE_WORDS = {
   /** "Hi Enginy, Florian opened early access to Bridge for you. Sign in with your work email to start." */
   linkLead: (label: string, inviter: string) =>
     `${label.trim() ? `Hi ${label.trim()},` : 'Hi,'} ${inviter.trim() || 'Florian'} opened early access to Bridge for you. Sign in with your work email to start.`,
+  /** After linkLead while foundingOpen (terms 10.1 (c)); nothing after the cutoff. */
+  linkFounding: `Join by ${FOUNDING_DATE} and your team stays free, with no end date.`,
   /** Signed in already on this browser: an existing account needs no link (none of its uses is taken). */
   linkSignedIn: (name: string) => `You are signed in as ${name}. Continue with this account or use another one.`,
   /** Signed in already, and the link expired, ran out or was revoked. */

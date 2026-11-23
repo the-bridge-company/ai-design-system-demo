@@ -3,6 +3,8 @@
 // limited (does part of it, with the reason in its note) or a dash (doesn't, or isn't documented). From the tools' public pages, October 2026; the source of every cell is listed in
 // SOURCES and quoted in the pull request that last changed it. Pure data and helpers.
 
+import { FOUNDING_DATE } from './pricing';
+
 export type CellState = 'yes' | 'partial' | 'no';
 
 export interface Cell {
@@ -143,9 +145,9 @@ export const SHORT: CompareRow[] = [
   },
   {
     feature: 'Free with every feature, today',
-    detail: 'Paid plans from 2027. Teams that request access by 31 March 2027 stay free',
+    detail: `Paid plans from 2027. Teams that request access by ${FOUNDING_DATE} stay free`,
     cells: [
-      y('Free for every team today, with every feature. Paid plans open in 2027; teams that request access by 31 March 2027 stay free, and self-hosting has no limit on any tier.'),
+      y(`Free for every team today, with every feature. Paid plans open in 2027; teams that request access by ${FOUNDING_DATE} stay free, and self-hosting has no limit on any tier.`),
       n,
       n,
       y('Chromatic, its visual testing service, is paid.', 'Chromatic is paid'),

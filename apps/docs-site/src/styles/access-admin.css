@@ -178,3 +178,9 @@
     grid-column: 1 / -1;
   }
 }
+
+.aa-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}

@@ -9,7 +9,7 @@
 // Words and rules in lib/access-request.ts.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Inbox } from 'lucide-react';
-import { Alert, Badge, Button, Dialog, DialogContent, EmptyState, Input, Link, NumberField, PageHeader, Skeleton, Textarea, ToastProvider, useToast } from '@bridge-ds/react';
+import { Alert, Badge, Button, Dialog, Divider, DialogContent, EmptyState, Input, Link, NumberField, PageHeader, Skeleton, Textarea, ToastProvider, useToast } from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
 import { ACCESS_API, ACCESS_WEEKLY_CAP, accessDay, ADMIN_WORDS as W, sortQueue, type AdminLink, type QueueRequest } from '../../../lib/access-request';
 import '../../../styles/access-admin.css';
@@ -80,7 +80,7 @@ function RequestRow({ r, busy, lead, onInvite, onNotYet }: { r: QueueRequest; bu
           <span className="aa-email">{r.email}</span>
         </p>
         <p className="aa-fix">{r.fix}</p>
-        <p className="aa-meta">
+        <div className="aa-meta aa-meta-row">
           {r.where ? (
             <Link href={r.where} external>
               {shortLink(r.where)}
@@ -88,9 +88,9 @@ function RequestRow({ r, busy, lead, onInvite, onNotYet }: { r: QueueRequest; bu
           ) : (
             <span>{W.noWhere}</span>
           )}
-          <span aria-hidden="true"> · </span>
+          <Divider orientation="vertical" spacing="sm" />
           <span>{W.sent(accessDay(r.at))}</span>
-        </p>
+        </div>
       </div>
       <div className="aa-row-actions">
         {r.status === 'pending' || !decided ? (

@@ -4,7 +4,9 @@
 // changed; any doubt (git error, no merge-base in a shallow clone) builds.
 //
 // What "changed" means depends on the branch:
-//   main         since the last deployed commit (VERCEL_GIT_PREVIOUS_SHA, else HEAD^).
+//   main         since the last deployed commit (VERCEL_GIT_PREVIOUS_SHA, else HEAD^). A redeploy of the commit
+//                already live (previous SHA = this SHA) always builds: a person asked for it, usually so a changed
+//                environment variable reaches production, and a diff of a commit with itself would skip it.
 //   any other    since the merge-base with origin/main, so the first push of a branch with several commits
 //                sees all of them, not only the last one. Vercel clones shallow: main is fetched if missing.
 //   agent/preview-<n>  Storybook only: Claude's preview of a behavior request (packages/core behavior-preview.ts) is
@@ -55,10 +57,13 @@ export function shouldBuild(app, changedFiles) {
  * Decides whether to build `app`. `git(args)` runs git and returns stdout, throwing on failure; it is injected so
  * the decision is unit tested without a repository. Returns { build, base, reason }.
  */
-export function decide(app, { ref = '', previousSha = '', repoUrl = '' } = {}, git) {
+export function decide(app, { ref = '', previousSha = '', commitSha = '', repoUrl = '' } = {}, git) {
   const behaviorPreview = app === 'storybook' && ref.startsWith(STORYBOOK_PREVIEW);
   if (!behaviorPreview && NO_PREVIEW.some((prefix) => ref.startsWith(prefix))) {
     return { build: false, base: null, reason: `${ref} is an agent branch, no preview: it deploys once merged.` };
+  }
+  if (ref === MAIN && previousSha && previousSha === commitSha) {
+    return { build: true, base: previousSha, reason: `redeploy of ${short(commitSha)}, the commit already live: building ${app}.` };
   }
   let base;
   try {
@@ -128,6 +133,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     {
       ref: process.env.VERCEL_GIT_COMMIT_REF ?? '',
       previousSha: process.env.VERCEL_GIT_PREVIOUS_SHA ?? '',
+      commitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? '',
       repoUrl: owner && slug ? `https://github.com/${owner}/${slug}.git` : '',
     },
     runGit,

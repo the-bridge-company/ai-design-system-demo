@@ -26,9 +26,14 @@
 //   POST { action: 'create-link', label, maxUses?, days? }  maxUses 1 to 50 (1), days 1 to 90 (14).
 //                                          { link, url }: the URL holds the token, shown this once.
 //   POST { action: 'revoke-link', id }     the link stops working at once. { ok: true }
+//   POST { action: 'people' }              { accounts, teams, total, truncated, joinedWeek }: every account (name, email,
+//                                          GitHub login, created, teams and role) and every team (name, repository,
+//                                          members, created), newest first, at most 2000 accounts (api/_lib/access-people.ts).
+//                                          Never a session, a code or a hash.
 //
 // Then the requester gets "Your Bridge request is in" (reply-to the contact address) and each address of
-// BRIDGE_ADMIN_EMAILS a short notice with the request (none when unset). An email that fails never fails the request:
+// BRIDGE_ADMIN_EMAILS a short notice with the request and a "Review the request" button to /admin/access/?request=<email>
+// (none when unset; the button only opens the queue: deciding still needs a signed-in admin). An email that fails never fails the request:
 // it is stored first. Counters are keyed by an HMAC of the email or network, never in clear.
 // Storage: api/_lib/access-request.ts. Env: KV_REST_API_URL + KV_REST_API_TOKEN (or the UPSTASH_ pair),
 // LIBRARY_SESSION_SECRET, RESEND_API_KEY + INVITE_EMAIL_FROM, PUBLIC_SITE_URL, BRIDGE_ADMIN_EMAILS,
@@ -56,6 +61,7 @@ import {
   type AccessRequest,
 } from '../_lib/access.js';
 import { sessionAccount, shownEmail } from '../_lib/account.js';
+import { listPeople } from '../_lib/access-people.js';
 import { resendSender, type EmailSender } from '../_lib/email.js';
 import { clientIp, dayOf, envInt, fail, HttpError, json, readBody, sameOrigin, secondsToTomorrow, siteOrigin, type FetchLike } from '../_lib/http.js';
 import { redisRest, type Redis } from '../_lib/redis.js';
@@ -71,6 +77,7 @@ import {
   invitedThisWeek,
   linkStateOf,
   oneLine,
+  reviewHref,
   sortQueue,
   type AdminLink,
 } from '../../src/lib/access-request.js';
@@ -160,8 +167,10 @@ async function onRequest(req: Request, env: AccessEnv, deps: AccessDeps, redis: 
   const warn = deps.warn ?? ((m: string) => console.warn(m));
   const sender = senderOf(env, deps);
   if (sender) {
-    const demo = `${siteOrigin(req, env.PUBLIC_SITE_URL)}${ACCESS_DEMO}`;
-    const mails = [accessConfirmationEmail({ to: input.email, demo, replyTo: CONTACT_EMAIL }), ...adminEmails(env.BRIDGE_ADMIN_EMAILS).map((to) => accessNoticeEmail({ to, request, again: Boolean(before) }))];
+    const origin = siteOrigin(req, env.PUBLIC_SITE_URL);
+    const demo = `${origin}${ACCESS_DEMO}`;
+    const review = reviewHref(origin, email);
+    const mails = [accessConfirmationEmail({ to: input.email, demo, replyTo: CONTACT_EMAIL }), ...adminEmails(env.BRIDGE_ADMIN_EMAILS).map((to) => accessNoticeEmail({ to, request, again: Boolean(before), review }))];
     const sent = await Promise.allSettled(mails.map((m) => sender.send(m)));
     sent.forEach((s, i) => {
       if (s.status === 'rejected') warn(`access: ${i === 0 ? 'confirmation' : 'notice'} email not sent (${s.reason instanceof Error ? s.reason.message : 'unknown'})`);
@@ -184,7 +193,7 @@ async function onLinkInfo(redis: Redis, token: string | null, now: number): Prom
 // ---------------------------------------------------------------------------------------------------------------
 // The founder's queue
 
-const ADMIN_ACTIONS = new Set(['list', 'invite', 'not-yet', 'create-link', 'revoke-link']);
+const ADMIN_ACTIONS = new Set(['list', 'invite', 'not-yet', 'create-link', 'revoke-link', 'people']);
 const LINK_LIMITS = { uses: [1, 50], days: [1, 90], label: 80, note: 600 } as const;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -230,6 +239,8 @@ async function onAdmin(req: Request, env: AccessEnv, deps: AccessDeps, redis: Re
     const requests = await allRequests(redis);
     return json(200, { requests: sortQueue(requests), links: await allLinks(redis, now), waiting: requests.filter((r) => r.status === 'pending').length, week: weekOf(env, requests, now) });
   }
+
+  if (body.action === 'people') return json(200, await listPeople(redis, now));
 
   if (body.action === 'invite' || body.action === 'not-yet') {
     const email = oneLine(body.email).toLowerCase();

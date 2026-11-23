@@ -21,11 +21,13 @@ const TOKEN = 'A'.repeat(43);
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 type Call = { url: string; method: string; body: Record<string, unknown> | null };
 let calls: Call[] = [];
+let account: unknown = null;
 let link: unknown = { valid: true, label: 'Ana at Acme', inviter: 'Florian', expiresAt: '2026-12-07T10:00:00.000Z' };
 let verifyReply: () => Response = () => json(200, { account: { email: 'ana@acme.example', name: 'Ana', github: null, teams: [] }, created: true, next: '/start/' });
 
 beforeEach(() => {
   calls = [];
+  account = null;
   sessionStorage.clear();
   localStorage.clear();
   link = { valid: true, label: 'Ana at Acme', inviter: 'Florian', expiresAt: '2026-12-07T10:00:00.000Z' };
@@ -35,7 +37,7 @@ beforeEach(() => {
     const c = { url, method: init?.method ?? 'GET', body: init?.body ? JSON.parse(String(init.body)) : null };
     calls.push(c);
     if (url.startsWith('/api/access?link=')) return json(200, link);
-    if (c.method === 'GET') return json(200, { available: true, account: null });
+    if (c.method === 'GET') return json(200, { available: true, account });
     if (c.body?.action === 'verify') return verifyReply();
     return json(200, { ok: true });
   });
@@ -89,8 +91,9 @@ describe('sign-in, Bridge on invitation', () => {
   it('says who invited on an access link, sends its token with the code, then forgets it', async () => {
     history.replaceState(null, '', `/signin/?access=${TOKEN}`);
     const { container } = render(createElement(SignIn));
-    expect(await screen.findByRole('heading', { name: 'Florian invited you to Bridge' })).toBeInTheDocument();
-    expect(screen.getByText('Sign in with your work email to start.')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: "You're invited to the Bridge beta" })).toBeInTheDocument();
+    expect(screen.getByText('Hi Ana at Acme, Florian opened early access to Bridge for you. Sign in with your work email to start.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send code' }).className).toMatch(/primary/);
     // Out of the address bar at once, kept in this tab (for GitHub and back).
     expect(location.search).toBe('');
     expect(sessionStorage.getItem(ACCESS_LINK_KEY)).toBe(TOKEN);
@@ -125,5 +128,44 @@ describe('sign-in, Bridge on invitation', () => {
     const field = await screen.findByRole('textbox', { name: 'Work email' });
     await waitFor(() => expect(field).toHaveValue('ana@acme.example'));
     expect(calls.some((c) => c.url.startsWith('/api/access'))).toBe(false);
+  });
+
+  it('a link with no label says "Hi," and still who opened access', async () => {
+    link = { valid: true, label: '', inviter: '', expiresAt: '2026-12-07T10:00:00.000Z' };
+    history.replaceState(null, '', `/signin/?access=${TOKEN}`);
+    render(createElement(SignIn));
+    expect(await screen.findByText('Hi, Florian opened early access to Bridge for you. Sign in with your work email to start.')).toBeInTheDocument();
+  });
+
+  it('signed in already on a live link: the invitation stays, Continue goes on without taking a use', async () => {
+    account = { email: 'ana@acme.example', name: 'Ana Ruiz', nameSet: true, github: null, teams: [] };
+    history.replaceState(null, '', `/signin/?access=${TOKEN}`);
+    const { container } = render(createElement(SignIn));
+    expect(await screen.findByRole('heading', { name: "You're invited to the Bridge beta" })).toBeInTheDocument();
+    expect(screen.getByText('You are signed in as Ana Ruiz. Continue with this account or use another one.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Welcome back' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Use another account' })).toBeInTheDocument();
+    await expectNoAxeViolations(container);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(navigate.to).toHaveBeenCalled());
+    // No account call carried the link: an existing account needs none of its uses.
+    expect(calls.some((c) => c.body && 'access' in c.body)).toBe(false);
+    expect(sessionStorage.getItem(ACCESS_LINK_KEY)).toBeNull();
+  });
+
+  it('signed in already on a link that no longer works: Welcome back says so, Continue still works', async () => {
+    account = { email: 'ana@acme.example', name: 'Ana Ruiz', nameSet: true, github: null, teams: [] };
+    for (const reason of ['expired', 'used', 'unknown']) {
+      link = { valid: false, reason };
+      history.replaceState(null, '', `/signin/?access=${TOKEN}`);
+      const { container, unmount } = render(createElement(SignIn));
+      expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
+      expect(screen.getByText('This invite link is no longer valid. You can still continue with your account.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled();
+      expect(screen.queryByRole('heading', { name: 'Bridge opens in small groups' })).toBeNull();
+      expect(sessionStorage.getItem(ACCESS_LINK_KEY)).toBeNull();
+      await expectNoAxeViolations(container);
+      unmount();
+    }
   });
 });

@@ -4,14 +4,44 @@
 //     warning says so; Invite still works, the founder decides.
 //   - One row per request (company, email, the design system link, what they want to fix, when they asked), Not yet
 //     and Invite in the row. Not yet asks for an optional note in a dialog. A decided row says how it ended.
-//   - Invite links: a small form (who it is for, uses, days), the new link shown once with Copy, then the list with
-//     uses, expiry and Revoke.
+//   - Three sections in Tabs: Requests (the queue), Invite links (a small form: who it is for, uses, days; the new link
+//     shown once with Copy, then the list with uses, expiry and Revoke) and People (every account and team, read when
+//     the tab first opens: api/access `people`).
+//   - ?request=<email> (the founder's notice email, "Review the request"): that row is scrolled to, marked with the
+//     selected surface, and its first action takes the focus. Signed out, Sign in comes back to the same address.
 // Words and rules in lib/access-request.ts.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Inbox } from 'lucide-react';
-import { Alert, Badge, Button, Dialog, Divider, DialogContent, EmptyState, Input, Link, NumberField, PageHeader, Skeleton, Textarea, ToastProvider, useToast } from '@bridge-ds/react';
+import {
+  Alert,
+  Badge,
+  Button,
+  Dialog,
+  Divider,
+  DialogContent,
+  EmptyState,
+  Input,
+  Link,
+  NumberField,
+  PageHeader,
+  Skeleton,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsList,
+  TabsPanel,
+  Textarea,
+  ToastProvider,
+  useToast,
+} from '@bridge-ds/react';
 import ButtonLink from '../ButtonLink';
-import { ACCESS_API, ACCESS_WEEKLY_CAP, accessDay, ADMIN_WORDS as W, sortQueue, type AdminLink, type QueueRequest } from '../../../lib/access-request';
+import { ACCESS_API, ACCESS_WEEKLY_CAP, accessDay, ADMIN_WORDS as W, REQUEST_PARAM, sortQueue, type AdminLink, type PeopleList, type QueueRequest } from '../../../lib/access-request';
+import { signInHref } from '../../../lib/account';
 import '../../../styles/access-admin.css';
 
 interface Queue {
@@ -63,7 +93,16 @@ function shortLink(href: string): string {
 }
 
 /** `lead`: the first request waiting, in queue order: its Invite is the page's one primary action. */
-function RequestRow({ r, busy, lead, onInvite, onNotYet }: { r: QueueRequest; busy: boolean; lead: boolean; onInvite: () => void; onNotYet: () => void }) {
+function RequestRow({ r, busy, lead, target, onInvite, onNotYet }: { r: QueueRequest; busy: boolean; lead: boolean; target: boolean; onInvite: () => void; onNotYet: () => void }) {
+  const row = useRef<HTMLLIElement>(null);
+  // The request the founder's email points to: in view, marked, its first action focused (the row itself once decided).
+  useEffect(() => {
+    if (!target || !row.current) return;
+    const el = row.current;
+    el.scrollIntoView?.({ block: 'center' });
+    const first = el.querySelector<HTMLElement>('button:not([disabled])');
+    (first ?? el).focus({ preventScroll: true });
+  }, [target]);
   const decided =
     r.status === 'invited' && r.approvedAt
       ? r.approvedVia === 'link'
@@ -73,7 +112,7 @@ function RequestRow({ r, busy, lead, onInvite, onNotYet }: { r: QueueRequest; bu
       ? W.declined(accessDay(r.declinedAt))
       : null;
   return (
-    <li className="aa-row" data-status={r.status}>
+    <li ref={row} className="aa-row" data-status={r.status} data-target={target || undefined} tabIndex={target ? -1 : undefined} aria-current={target ? 'true' : undefined}>
       <div className="aa-row-main">
         <p className="aa-row-title">
           <span className="aa-company">{r.company}</span>
@@ -128,6 +167,145 @@ function LinkRow({ l, busy, onRevoke }: { l: AdminLink; busy: boolean; onRevoke:
   );
 }
 
+/** ?request=<email> of the page's address (the founder's notice email), lower case; null without one. */
+function requestTarget(): string | null {
+  if (typeof window === 'undefined') return null;
+  const v = new URLSearchParams(window.location.search).get(REQUEST_PARAM)?.trim().toLowerCase();
+  return v ? v : null;
+}
+
+type PeopleLoad = { state: 'loading' } | { state: 'ready'; people: PeopleList } | { state: 'failed'; message: string };
+
+const day = (iso: string | null) => (iso ? accessDay(iso) : W.unknown);
+
+/** Every account and team, read once the People tab opens (TabsPanel mounts it then). */
+function People() {
+  const [load, setLoad] = useState<PeopleLoad>({ state: 'loading' });
+  const [round, setRound] = useState(0);
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const out = await call<PeopleList>({ action: 'people' });
+      if (!live) return;
+      setLoad(out.ok ? { state: 'ready', people: out.data } : { state: 'failed', message: out.status === 0 ? W.peopleFailed : message(out.data) });
+    })();
+    return () => {
+      live = false;
+    };
+  }, [round]);
+
+  if (load.state === 'loading')
+    return (
+      <div className="aa-people" aria-busy="true">
+        <Skeleton width="40%" />
+        <Skeleton height="var(--size-20)" />
+      </div>
+    );
+  if (load.state === 'failed')
+    return (
+      <Alert
+        tone="danger"
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setLoad({ state: 'loading' });
+              setRound((n) => n + 1);
+            }}
+          >
+            {W.retry}
+          </Button>
+        }
+      >
+        {load.message === W.failed ? W.peopleFailed : load.message}
+      </Alert>
+    );
+  const p = load.people;
+  return (
+    <div className="aa-people">
+      <p className="aa-lead">{W.peopleSummary(p.total, p.teams.length, p.joinedWeek)}</p>
+      {p.truncated && (
+        <Alert tone="info" className="aa-alert">
+          {W.peopleTruncated(p.accounts.length, p.total)}
+        </Alert>
+      )}
+      <div className="aa-section">
+        <h2 id="aa-accounts" className="aa-h2">
+          {W.accountsTitle}
+        </h2>
+        {p.accounts.length ? (
+          <Table aria-label={W.accountsTitle} className="aa-table" maxHeight="var(--size-160)" stickyHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{W.colName}</TableHead>
+                <TableHead>{W.colEmail}</TableHead>
+                <TableHead>{W.colSignIn}</TableHead>
+                <TableHead>{W.colCreated}</TableHead>
+                <TableHead>{W.colTeams}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {p.accounts.map((a) => (
+                <TableRow key={a.email}>
+                  <TableCell>{a.name || W.unknown}</TableCell>
+                  <TableCell>{a.email}</TableCell>
+                  <TableCell>{a.github ? W.viaGithub(a.github) : W.viaEmail}</TableCell>
+                  <TableCell>{day(a.createdAt)}</TableCell>
+                  <TableCell>
+                    {a.teams.length ? (
+                      <ul className="aa-teams">
+                        {a.teams.map((t) => (
+                          <li key={t.name}>
+                            {t.name} <span className="aa-role">{W.role[t.role]}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="aa-role">{W.noTeams}</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <p className="aa-lead">{W.noPeople}</p>
+        )}
+      </div>
+      <div className="aa-section">
+        <h2 id="aa-teams" className="aa-h2">
+          {W.teamsTitle}
+        </h2>
+        {p.teams.length ? (
+          <Table aria-label={W.teamsTitle} className="aa-table" maxHeight="var(--size-160)" stickyHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{W.colName}</TableHead>
+                <TableHead>{W.colRepo}</TableHead>
+                <TableHead numeric>{W.colMembers}</TableHead>
+                <TableHead>{W.colCreated}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {p.teams.map((t) => (
+                <TableRow key={t.repo ?? t.name}>
+                  <TableCell>{t.name}</TableCell>
+                  <TableCell>{t.repo ?? <span className="aa-role">{W.noRepo}</span>}</TableCell>
+                  <TableCell numeric>{t.members}</TableCell>
+                  <TableCell>{day(t.createdAt)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <p className="aa-lead">{W.noTeamRows}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Queue({ initial, onReload }: { initial: Queue; onReload: () => void }) {
   const toast = useToast();
   const [q, setQ] = useState<Queue>(initial);
@@ -144,6 +322,8 @@ function Queue({ initial, onReload }: { initial: Queue; onReload: () => void }) 
   const [created, setCreated] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const labelField = useRef<HTMLInputElement>(null);
+  const [target] = useState(requestTarget);
+  const [tab, setTab] = useState('requests');
 
   const cap = q.week.cap ?? ACCESS_WEEKLY_CAP;
   const left = Math.max(0, cap - q.week.invited);
@@ -242,14 +422,10 @@ function Queue({ initial, onReload }: { initial: Queue; onReload: () => void }) 
 
   const requests = sortQueue(q.requests);
   const lead = requests.find((r) => r.status === 'pending')?.email;
+  const gone = target !== null && !requests.some((r) => r.email.toLowerCase() === target);
   return (
     <div className="aa">
       <PageHeader title={W.title} lead={W.summary(q.waiting, left, cap)} />
-      {q.week.invited >= cap && (
-        <Alert tone="warning" className="aa-alert">
-          {W.overCap(cap)}
-        </Alert>
-      )}
       {problem && (
         <Alert
           tone="danger"
@@ -265,72 +441,99 @@ function Queue({ initial, onReload }: { initial: Queue; onReload: () => void }) 
         </Alert>
       )}
 
-      <section className="aa-section" aria-label={W.title}>
-        {requests.length ? (
-          <ul className="aa-list">
-            {requests.map((r) => (
-              <RequestRow key={r.email} r={r} busy={busy === r.email} lead={r.email === lead} onInvite={() => void invite(r)} onNotYet={() => setNotYet(r)} />
-            ))}
-          </ul>
-        ) : (
-          <EmptyState icon={Inbox} title={W.emptyTitle} description={W.emptyText} headingLevel={2} className="aa-empty" />
-        )}
-      </section>
+      <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="aa-tabs">
+        <TabsList aria-label={W.title}>
+          <Tab value="requests" count={q.waiting}>
+            {W.tabRequests}
+          </Tab>
+          <Tab value="links">{W.tabLinks}</Tab>
+          <Tab value="people">{W.tabPeople}</Tab>
+        </TabsList>
 
-      <section className="aa-section" aria-labelledby="aa-links">
-        <div className="aa-section-head">
-          <h2 id="aa-links" className="aa-h2">
-            {W.linksTitle}
-          </h2>
+        <TabsPanel value="requests" className="aa-panel">
+          {q.week.invited >= cap && (
+            <Alert tone="warning" className="aa-alert">
+              {W.overCap(cap)}
+            </Alert>
+          )}
+          {gone && (
+            <Alert tone="info" className="aa-alert">
+              {W.requestGone}
+            </Alert>
+          )}
+          {requests.length ? (
+            <ul className="aa-list">
+              {requests.map((r) => (
+                <RequestRow
+                  key={r.email}
+                  r={r}
+                  busy={busy === r.email}
+                  lead={r.email === lead}
+                  target={r.email.toLowerCase() === target}
+                  onInvite={() => void invite(r)}
+                  onNotYet={() => setNotYet(r)}
+                />
+              ))}
+            </ul>
+          ) : (
+            <EmptyState icon={Inbox} title={W.emptyTitle} description={W.emptyText} headingLevel={2} className="aa-empty" />
+          )}
+        </TabsPanel>
+
+        <TabsPanel value="links" className="aa-panel">
           <p className="aa-lead">{W.linksLead}</p>
-        </div>
-        <form className="aa-link-form" noValidate onSubmit={(e) => void createLink(e)}>
-          <div className="aa-label-field">
-            <Input
-              ref={labelField}
-              label={W.labelLabel}
-              name="label"
-              maxLength={80}
-              placeholder={W.labelPlaceholder}
-              value={form.label}
-              error={labelError ?? undefined}
-              onValueChange={(v) => {
-                setForm((f) => ({ ...f, label: v }));
-                if (labelError) setLabelError(null);
-              }}
-            />
-          </div>
-          <NumberField className="aa-num" label={W.usesLabel} name="uses" min={1} max={50} value={form.uses} onValueChange={(v) => setForm((f) => ({ ...f, uses: v }))} />
-          <NumberField className="aa-num" label={W.daysLabel} name="days" min={1} max={90} value={form.days} onValueChange={(v) => setForm((f) => ({ ...f, days: v }))} />
-          <Button type="submit" variant="secondary" className="aa-create" loading={busy === 'create-link'}>
-            {W.createLink}
-          </Button>
-        </form>
-        {created && (
-          <Alert
-            tone="success"
-            className="aa-alert"
-            title={W.newLinkTitle}
-            onDismiss={() => setCreated(null)}
-            actions={
-              <Button variant="secondary" size="sm" onClick={() => void copy()}>
-                {copied ? W.copied : W.copy}
-              </Button>
-            }
-          >
-            <code className="aa-url">{created}</code>
-          </Alert>
-        )}
-        {q.links.length ? (
-          <ul className="aa-list">
-            {q.links.map((l) => (
-              <LinkRow key={l.id} l={l} busy={busy === l.id} onRevoke={() => void revoke(l)} />
-            ))}
-          </ul>
-        ) : (
-          <p className="aa-lead">{W.noLinks}</p>
-        )}
-      </section>
+          <form className="aa-link-form" noValidate onSubmit={(e) => void createLink(e)}>
+            <div className="aa-label-field">
+              <Input
+                ref={labelField}
+                label={W.labelLabel}
+                name="label"
+                maxLength={80}
+                placeholder={W.labelPlaceholder}
+                value={form.label}
+                error={labelError ?? undefined}
+                onValueChange={(v) => {
+                  setForm((f) => ({ ...f, label: v }));
+                  if (labelError) setLabelError(null);
+                }}
+              />
+            </div>
+            <NumberField className="aa-num" label={W.usesLabel} name="uses" min={1} max={50} value={form.uses} onValueChange={(v) => setForm((f) => ({ ...f, uses: v }))} />
+            <NumberField className="aa-num" label={W.daysLabel} name="days" min={1} max={90} value={form.days} onValueChange={(v) => setForm((f) => ({ ...f, days: v }))} />
+            <Button type="submit" variant="primary" className="aa-create" loading={busy === 'create-link'}>
+              {W.createLink}
+            </Button>
+          </form>
+          {created && (
+            <Alert
+              tone="success"
+              className="aa-alert"
+              title={W.newLinkTitle}
+              onDismiss={() => setCreated(null)}
+              actions={
+                <Button variant="secondary" size="sm" onClick={() => void copy()}>
+                  {copied ? W.copied : W.copy}
+                </Button>
+              }
+            >
+              <code className="aa-url">{created}</code>
+            </Alert>
+          )}
+          {q.links.length ? (
+            <ul className="aa-list" aria-label={W.linksTitle}>
+              {q.links.map((l) => (
+                <LinkRow key={l.id} l={l} busy={busy === l.id} onRevoke={() => void revoke(l)} />
+              ))}
+            </ul>
+          ) : (
+            <p className="aa-lead">{W.noLinks}</p>
+          )}
+        </TabsPanel>
+
+        <TabsPanel value="people" className="aa-panel">
+          <People />
+        </TabsPanel>
+      </Tabs>
 
       <Dialog
         open={notYet !== null}
@@ -378,7 +581,8 @@ export default function AccessAdmin() {
       if (out.status === 401)
         return setLoad({
           state: 'signin',
-          href: typeof out.data.signIn === 'string' ? out.data.signIn : '/signin/?next=%2Fadmin%2Faccess%2F',
+          // Back to this very address once signed in, ?request= included (the founder's notice email).
+          href: signInHref(`${window.location.pathname}${window.location.search}`),
         });
       if (out.status === 403 && out.data.error === 'not_admin') return setLoad({ state: 'denied' });
       setLoad({ state: 'failed' });

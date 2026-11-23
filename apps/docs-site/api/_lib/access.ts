@@ -231,8 +231,12 @@ export function accessConfirmationEmail(x: { to: string; demo: string; replyTo?:
   return { to: x.to, subject, text, html, ...(x.replyTo ? { replyTo: x.replyTo } : {}) };
 }
 
-/** To the founder: who asked, for which company, what they want to fix. Every field escaped, the subject one line. */
-export function accessNoticeEmail(x: { to: string; request: AccessRequest; again: boolean }): EmailMessage {
+/**
+ * To the founder: who asked, for which company, what they want to fix, and one button to the request in the queue
+ * (`review`, /admin/access/?request=<email>): it only opens the page, Invite still needs a signed-in admin. Every field
+ * escaped, the subject one line. Replying answers the requester.
+ */
+export function accessNoticeEmail(x: { to: string; request: AccessRequest; again: boolean; review?: string }): EmailMessage {
   const r = x.request;
   const company = oneLine(r.company).slice(0, 120);
   const subject = `${x.again ? 'Access request updated' : 'Access request'}: ${company}`;
@@ -246,6 +250,7 @@ export function accessNoticeEmail(x: { to: string; request: AccessRequest; again
     'What they want to fix first:',
     r.fix,
     '',
+    ...(x.review ? [`Review the request: ${x.review}`, ''] : []),
     'Reply to this email to answer them.',
   ].join('\n');
   const html = mailPage({
@@ -256,6 +261,7 @@ export function accessNoticeEmail(x: { to: string; request: AccessRequest; again
       mailP(`Design system: ${r.where ? mailLink(r.where, r.where) : 'not given'}`),
       mailP(`First request: ${escHtml(when)}`, true),
       mailQuote(r.fix),
+      ...(x.review ? [mailButton(x.review, 'Review the request')] : []),
     ].join('\n'),
     footer: 'Reply to this email to answer them.',
   });

@@ -181,6 +181,11 @@ describe('POST /api/access', () => {
     expect(n.html).not.toContain('<b>Acme</b>');
     expect(n.html).toContain('&lt;b&gt;Acme&lt;/b&gt; &amp; &quot;Co&quot;');
     expect(n.html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    // One button straight to the request in the queue; never a link that decides on its own.
+    expect(n.text).toContain('Review the request: https://bridgedesignsystem.com/admin/access/?request=ana%40acme.com');
+    expect(n.html).toContain('href="https://bridgedesignsystem.com/admin/access/?request=ana%40acme.com"');
+    expect(n.html).toContain('>Review the request</a>');
+    expect(n.html).not.toMatch(/action=|invite\?|approve/i);
     // Asking again: the notice says it is an update.
     await handleAccess(post(GOOD), env, s.deps);
     expect(s.sent.at(-1)!.subject).toBe('Access request updated: Acme');

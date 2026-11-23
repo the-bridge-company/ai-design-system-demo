@@ -34,7 +34,10 @@ describe('access queue', () => {
   it('says how many wait and how many places are left, one row per request with its two actions, one primary', async () => {
     const { container } = render(createElement(AccessAdmin));
     expect(await screen.findByText('2 requests waiting · 4 of 5 places left this week')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1, name: 'Access requests' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Access' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Requests/, selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Invite links' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'People' })).toBeInTheDocument();
     const rows = container.querySelectorAll('.aa-row');
     expect(rows).toHaveLength(2);
     const first = within(rows[0] as HTMLElement);
@@ -93,8 +96,9 @@ describe('access queue', () => {
     const { container } = render(createElement(AccessAdmin));
     expect(await screen.findByRole('heading', { name: 'No requests yet' })).toBeInTheDocument();
     expect(screen.getByText('0 requests waiting · 5 of 5 places left this week')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Invite links' })).toBeInTheDocument();
-    expect(screen.getByText('No invite links yet.')).toBeInTheDocument();
+    await expectNoAxeViolations(container);
+    await userEvent.setup().click(screen.getByRole('tab', { name: 'Invite links' }));
+    expect(await screen.findByText('No invite links yet.')).toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 
@@ -107,7 +111,10 @@ describe('access queue', () => {
     // After userEvent.setup(), which puts its own clipboard in place.
     const writeText = vi.fn(async () => {});
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    await user.click(await screen.findByRole('tab', { name: 'Invite links' }));
     await screen.findByText('Leo at Globex');
+    // The lone action of this section is its primary.
+    expect(screen.getByRole('button', { name: 'Create link' }).className).toMatch(/primary/);
     await user.click(screen.getByRole('button', { name: 'Create link' }));
     expect(screen.getByText('Say who the link is for, in a few words.')).toBeInTheDocument();
     expect(sent.filter((b) => b.action === 'create-link')).toHaveLength(0);
@@ -130,13 +137,77 @@ describe('access queue', () => {
 
   it('asks to sign in without a session, and tells someone who is not a founder', async () => {
     list = () => json(401, { error: 'signin', message: 'Sign in to see access requests', signIn: '/signin/?next=%2Fadmin%2Faccess%2F' });
+    // Opened from the founder's notice email: sign in comes back to the same address, the request included.
+    window.history.pushState({}, '', '/admin/access/?request=ana%40acme.example');
     const { unmount } = render(createElement(AccessAdmin));
     expect(await screen.findByRole('heading', { name: 'Sign in to see access requests' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/signin/?next=%2Fadmin%2Faccess%2F');
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/signin/?next=%2Fadmin%2Faccess%2F%3Frequest%3Dana%2540acme.example');
+    window.history.pushState({}, '', '/admin/access/');
     unmount();
     list = () => json(403, { error: 'not_admin', message: 'x' });
     render(createElement(AccessAdmin));
     expect(await screen.findByText('This page is for the people who open Bridge to new teams. Your account is not one of them.')).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('?request= from the notice email: that row is marked, in view, and its first action has the focus', async () => {
+    window.history.pushState({}, '', '/admin/access/?request=LEO%40globex.example');
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    const { container } = render(createElement(AccessAdmin));
+    const row = (await screen.findByText('leo@globex.example')).closest('.aa-row') as HTMLElement;
+    expect(row).toHaveAttribute('data-target');
+    expect(row).toHaveAttribute('aria-current', 'true');
+    expect(container.querySelectorAll('.aa-row[data-target]')).toHaveLength(1);
+    await waitFor(() => expect(within(row).getByRole('button', { name: 'Not yet' })).toHaveFocus());
+    expect(scroll).toHaveBeenCalled();
+    expect(screen.queryByText('The request from this email link is no longer in the queue.')).toBeNull();
+    await expectNoAxeViolations(container);
+    window.history.pushState({}, '', '/admin/access/');
+  });
+
+  it('?request= for a request no longer in the queue says so', async () => {
+    window.history.pushState({}, '', '/admin/access/?request=gone%40nowhere.example');
+    const { container } = render(createElement(AccessAdmin));
+    expect(await screen.findByText('The request from this email link is no longer in the queue.')).toBeInTheDocument();
+    expect(container.querySelectorAll('.aa-row[data-target]')).toHaveLength(0);
+    window.history.pushState({}, '', '/admin/access/');
+  });
+
+  it('People: read when the tab opens, a summary line, then the accounts and the teams in tables', async () => {
+    reply = (b) =>
+      b.action === 'people'
+        ? json(200, {
+            accounts: [
+              { name: 'Ana Ruiz', email: 'ana@acme.example', github: 'ana-gh', createdAt: '2026-11-22T10:00:00.000Z', teams: [{ name: 'Acme DS', role: 'admin', via: 'email' }] },
+              { name: 'Leo Park', email: 'leo@globex.example', github: null, createdAt: null, teams: [] },
+            ],
+            teams: [{ name: 'Acme DS', repo: 'acme/ds', members: 3, createdAt: null }],
+            total: 2,
+            truncated: false,
+            joinedWeek: 1,
+          })
+        : json(200, { ok: true });
+    const { container } = render(createElement(AccessAdmin));
+    const user = userEvent.setup();
+    await screen.findByText('ana@acme.example');
+    expect(sent.some((b) => b.action === 'people')).toBe(false);
+    await user.click(screen.getByRole('tab', { name: 'People' }));
+    expect(await screen.findByText('2 accounts · 1 team · 1 joined in the last 7 days')).toBeInTheDocument();
+    expect(sent.filter((b) => b.action === 'people')).toHaveLength(1);
+    const accounts = screen.getByRole('table', { name: 'Accounts' });
+    const rows = within(accounts).getAllByRole('row');
+    expect(rows).toHaveLength(3);
+    expect(within(rows[1]!).getByText('Ana Ruiz')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('GitHub (ana-gh)')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('22 November 2026')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('Admin')).toBeInTheDocument();
+    expect(within(rows[2]!).getByText('Email code')).toBeInTheDocument();
+    expect(within(rows[2]!).getByText('Unknown')).toBeInTheDocument();
+    expect(within(rows[2]!).getByText('None')).toBeInTheDocument();
+    const teams = screen.getByRole('table', { name: 'Teams' });
+    expect(within(teams).getByText('acme/ds')).toBeInTheDocument();
+    expect(within(teams).getByText('3')).toBeInTheDocument();
+    await expectNoAxeViolations(container);
   });
 });

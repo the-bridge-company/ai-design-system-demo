@@ -90,9 +90,11 @@ interface Props {
    * repository either (<html data-no-repo data-workspace>): no demo banner, no review count, the chip names the workspace.
    */
   workspace?: boolean;
+  /** A page search engines must not list (pages/admin/access.astro): <meta name="robots" content="noindex">. */
+  noindex?: boolean;
 }
 
-const { title, description, sources = [], updated, wide = false, crumbs, toc, hosted = false, library = false, bare: bareOnly = false, standalone = false, workspace = false } = Astro.props;
+const { title, description, sources = [], updated, wide = false, crumbs, toc, hosted = false, library = false, bare: bareOnly = false, standalone = false, workspace = false, noindex = false } = Astro.props;
 const bare = bareOnly || standalone;
 // Pages that read no repository: the start screen and the browser workspace.
 const noRepo = bare || workspace;
@@ -176,7 +178,7 @@ const pageTitle = title === 'Home' ? (isStudio ? 'Bridge Studio' : 'Library | Br
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     {description && <meta name="description" content={description} />}
-    {hosted && <meta name="robots" content="noindex" />}
+    {(hosted || noindex) && <meta name="robots" content="noindex" />}
     <meta name="author" content="Florian Gouloubi" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b1825" media="(prefers-color-scheme: dark)" />

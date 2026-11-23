@@ -18,6 +18,12 @@
 // sends the code to the invited address, shown masked, and after the code (and the name) opens E3 for that invite.
 // Signed in as the invited email: E3 at once. Signed in as someone else: "This invite was sent to m•••@acme.com" with
 // "Sign in as that email". A member: "You're already in <team>". A spent link: whom to ask for a new one.
+//
+// Bridge on invitation (BRIDGE_ACCESS_GATE, api/account): a new email may be turned down once its code is right. The
+// screen then says so in one panel ("Bridge opens in small groups"), with Request access (this email filled in) and
+// the demo. An access link (/signin/?access=<token>, made by a founder in /admin/access/) says who invited on the
+// first step and goes along with the code and with GitHub; a spent or expired one says so, with Request access.
+// ?email= fills the email in (the "Your Bridge access is open" email links here with it).
 // lib/account.ts holds the words and rules, scripts/account-session.ts the calls.
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Mail } from 'lucide-react';
@@ -34,6 +40,7 @@ import { loadRecentTeams, loadTeamNames, loadTeamRoles } from '../../../lib/rece
 import { continueAs, readLastEmail, rememberEmail, type ContinueAs } from '../../../lib/signin-continue';
 import { useFace } from './AccountMenu';
 import { DEMO_HOME, START_PAGE } from '../../../lib/start';
+import { ACCESS_LINK_KEY, accessTokenFromQuery, emailFromQuery, GATE_WORDS as GW, REQUEST_PAGE, type AccessLinkInfo } from '../../../lib/access-request';
 import '../../../styles/account.css';
 
 /** Tests replace it. */
@@ -57,6 +64,31 @@ export function readInviteToken(): string | null {
 export function forgetInviteToken() {
   try {
     sessionStorage.removeItem(INVITE_TOKEN_KEY);
+  } catch {
+    /* storage blocked: nothing kept */
+  }
+}
+
+/** The access link's token: read from ?access= (then out of the address bar at once), else the one kept in this tab. */
+export function readAccessToken(): string | null {
+  const fromQuery = accessTokenFromQuery(location.search);
+  if (fromQuery) {
+    const url = new URL(location.href);
+    url.searchParams.delete('access');
+    history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+  }
+  try {
+    if (fromQuery) sessionStorage.setItem(ACCESS_LINK_KEY, fromQuery);
+    return fromQuery ?? sessionStorage.getItem(ACCESS_LINK_KEY);
+  } catch {
+    return fromQuery;
+  }
+}
+
+/** The access link made its account, or no longer works: this tab forgets it. */
+export function forgetAccessToken() {
+  try {
+    sessionStorage.removeItem(ACCESS_LINK_KEY);
   } catch {
     /* storage blocked: nothing kept */
   }
@@ -126,6 +158,11 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
   /** The invite link this screen opened from (invite mode), and what the server said it is. */
   const [link, setLink] = useState<InviteLink | null>(null);
   const token = useRef<string | null>(null);
+  /** The access link this screen opened from (?access=), and what the server said it is. */
+  const access = useRef<string | null>(null);
+  const [accessInfo, setAccessInfo] = useState<AccessLinkInfo | null>(null);
+  /** Bridge opens on invitation and this new email has no access yet: where to request it. */
+  const [refused, setRefused] = useState<string | null>(null);
   const codeField = useRef<HTMLInputElement>(null);
   const nameField = useRef<HTMLInputElement>(null);
   const emailField = useRef<HTMLInputElement>(null);
@@ -255,6 +292,10 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
 
   /** A finished sign-in: an account without a name of its own says it once, then goes on. */
   const done = (r: SignedIn) => {
+    if (access.current) {
+      access.current = null;
+      forgetAccessToken();
+    }
     rememberEmail(safeStore(), r.account.email);
     setEmail((e) => e || r.account.email);
     setMe(r.account);
@@ -266,14 +307,25 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
     go(r);
   };
 
+  /** The server turned a new account down (Bridge opens on invitation): the panel, with this email's request page. */
+  const refusedBy = (err: unknown, api: { AccountError: typeof import('../../../scripts/account-session').AccountError }): boolean => {
+    if (!(err instanceof api.AccountError) || err.code !== 'access_required') return false;
+    const href = typeof err.details.request === 'string' && err.details.request.startsWith(REQUEST_PAGE) ? err.details.request : REQUEST_PAGE;
+    setError(null);
+    setAlert(null);
+    setRefused(href);
+    return true;
+  };
+
   const finishGitHub = async (gh: string) => {
     setBusy('github');
     const api = await import('../../../scripts/account-session');
     try {
-      done(await api.signInWithGitHub(gh));
+      done(await api.signInWithGitHub(gh, access.current));
     } catch (err) {
       // No accounts on this site: the GitHub sign-in alone is the way in, as before.
       if (err instanceof api.AccountUnavailable) return leave(next ?? START_PAGE);
+      if (refusedBy(err, api)) return setStep('start');
       setAlert(err instanceof Error ? err.message : W.failed);
       setStep('start');
     } finally {
@@ -295,6 +347,7 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
         /* storage blocked: nothing was pending */
       }
       if (invite) token.current = readInviteToken();
+      else access.current = readAccessToken();
       const gh = pending ? await api.workingGitHubToken() : null;
       if (!live) return;
       if (gh) {
@@ -320,14 +373,24 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
         setAlready(continueAs({ account: info.account, recent: loadRecentTeams(), teamNames: loadTeamNames(), teamRoles: loadTeamRoles() }));
         return setStep('continue');
       }
+      // An access link: who invited, or that it no longer works (then the email is not asked).
+      if (access.current) {
+        const read = await api.readAccessLink(access.current);
+        if (!live) return;
+        if (read && !read.valid) {
+          access.current = null;
+          forgetAccessToken();
+        }
+        setAccessInfo(read);
+      }
       // A GitHub sign-in on this browser without a Bridge account (a site without accounts, or never linked).
-      const ghUser = await gitHubLogin(api);
+      const ghUser = access.current ? null : await gitHubLogin(api);
       if (!live) return;
       if (ghUser && !next) {
         setAlready(continueAs({ account: null, github: ghUser, recent: loadRecentTeams(), teamNames: loadTeamNames(), teamRoles: loadTeamRoles() }));
         return setStep('continue');
       }
-      setEmail((e) => e || readLastEmail(safeStore()));
+      setEmail((e) => e || emailFromQuery(location.search) || readLastEmail(safeStore()));
       setStep('start');
     })();
     return () => {
@@ -348,8 +411,8 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
     if (step === 'start') (emailField.current ?? document.getElementById('acc-title'))?.focus();
     if (step === 'code') codeField.current?.focus();
     if (step === 'name') nameField.current?.focus();
-    if (step === 'room') document.getElementById('acc-title')?.focus();
-  }, [step, room]);
+    if (step === 'room' || refused) document.getElementById('acc-title')?.focus();
+  }, [step, room, refused]);
 
   const github = async () => {
     setAlert(null);
@@ -426,10 +489,15 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
     setBusy('verify');
     const api = await import('../../../scripts/account-session');
     try {
-      const r = await api.verifyCode(codeFor(), value);
+      const r = await api.verifyCode(codeFor(), value, undefined, viaInvite ? null : access.current);
       verified.current = true;
       done(r);
     } catch (err) {
+      if (refusedBy(err, api)) {
+        verified.current = true;
+        setStep('start');
+        return;
+      }
       if (err instanceof api.AccountError && err.status >= 400 && err.status < 500 && err.status !== 429) rejected.current = value;
       const tries = err instanceof api.AccountError ? err.details.triesLeft : undefined;
       const text = err instanceof Error ? err.message : W.failed;
@@ -535,7 +603,9 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
             </>
           ),
         }
-      : { title: W.signInTitle, lead: W.signInLead };
+      : accessInfo?.valid
+        ? { title: GW.linkTitle(accessInfo.inviter), lead: GW.linkLead }
+        : { title: W.signInTitle, lead: W.signInLead };
   const top =
     step === 'code'
       ? { title: W.codeTitle, lead: W.codeLead(viaInvite ? sentTo : maskEmail(email.trim())) }
@@ -544,6 +614,32 @@ export default function SignIn({ invite = false }: { invite?: boolean }) {
         : invite && step === 'loading'
           ? { title: EW.opening, lead: '' }
           : startHeader;
+
+  /** Bridge opens in small groups: the refusal, or an access link that no longer works. One primary, the demo beside. */
+  const closedPanel = (title: string, text: string, href: string) => (
+    <SignInPage
+      foot={
+        <p className="acc-foot">
+          <Link href={PRIVACY_PAGE}>{W.privacy}</Link>
+        </p>
+      }
+    >
+      <section className="acc" aria-labelledby="acc-title">
+        {header({ title, lead: text })}
+        <div className="acc-ways">
+          <ButtonLink href={href} variant="primary" size="lg" fullWidth>
+            {GW.request}
+          </ButtonLink>
+          <ButtonLink href={DEMO_HOME} variant="secondary" fullWidth>
+            {GW.demo}
+          </ButtonLink>
+        </div>
+      </section>
+    </SignInPage>
+  );
+
+  if (refused && (step === 'start' || step === 'code')) return closedPanel(GW.title, GW.text, refused);
+  if (accessInfo && !accessInfo.valid && step === 'start') return closedPanel(GW.linkGoneTitle, GW.linkGone, REQUEST_PAGE);
 
   if (step === 'continue' && already) {
     return (

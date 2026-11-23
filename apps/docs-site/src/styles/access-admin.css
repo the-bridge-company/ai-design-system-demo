@@ -1,0 +1,180 @@
+/* The founder's queue (pages/admin/access.astro, AccessAdmin.tsx): the page header, one row per request with its two
+   actions on the same line, then the invite links (form and list). One width for every section. Four type sizes: the
+   page title (h1), the section title (h2), body and ui/meta. */
+
+.aa {
+  display: grid;
+  gap: var(--space-8);
+  width: 100%;
+  max-width: var(--size-240);
+  margin-inline: auto;
+}
+
+.aa-alert {
+  margin: 0;
+}
+
+.aa-section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.aa-section-head {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.aa-h2 {
+  margin: 0;
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  line-height: var(--typography-h2-line-height);
+  letter-spacing: var(--typography-h2-tracking);
+}
+
+.aa-lead {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+/* One region per list: rows share a bordered surface, a hairline between them. */
+.aa-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+  list-style: none;
+}
+
+.aa-row,
+.aa-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4) var(--space-6);
+  padding: var(--space-4) var(--space-5);
+}
+
+.aa-row + .aa-row,
+.aa-link + .aa-link {
+  border-top: var(--border-width-default) solid var(--color-border-default);
+}
+
+.aa-row-main {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.aa-row-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.aa-company,
+.aa-link-label {
+  font-weight: var(--font-weight-semibold);
+}
+
+.aa-link-label {
+  margin: 0;
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.aa-email {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.aa-fix {
+  max-width: 65ch;
+  margin: 0;
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+}
+
+.aa-meta {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.aa-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* The links form: who it is for takes the room, uses and days stay narrow, the button ends the line. */
+.aa-link-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--size-40) var(--size-40) auto;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.aa-url {
+  display: block;
+  overflow-wrap: anywhere;
+  font-family: var(--font-family-mono);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+}
+
+.aa-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .aa {
+    gap: var(--space-6);
+  }
+
+  .aa-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .aa-row,
+  .aa-link {
+    padding: var(--space-4);
+  }
+
+  /* Both actions under the request, each half the bar: big enough to hit with a thumb. */
+  .aa-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aa-row-actions > :only-child {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .aa-link-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aa-label-field,
+  .aa-create {
+    grid-column: 1 / -1;
+  }
+}

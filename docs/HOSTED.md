@@ -960,6 +960,47 @@ working days. The server piece is `apps/docs-site/api/access/index.ts`, words an
 
 It reuses storage, `LIBRARY_SESSION_SECRET`, Resend (`RESEND_API_KEY`, `INVITE_EMAIL_FROM`) and `PUBLIC_SITE_URL`.
 
+### The access gate
+
+`BRIDGE_ACCESS_GATE=on` (read on every request, off when unset or anything else) makes Bridge invitation only:
+`/api/account` makes a new account, by email code or GitHub, only when one of these holds:
+
+- the email is approved in the queue (Invite, below) and the approval is less than 30 days old;
+- the call carries a live access link token (`/signin/?access=<token>`): one of its uses is taken, the email's request
+  (if any) reads approved, and the link records who used it;
+- a team asked for the person: a pending team invite, an email membership already, or a team open to their work domain
+  (teams keep inviting their colleagues freely);
+- the email is an address of `BRIDGE_ADMIN_EMAILS`.
+
+Existing accounts always sign in. The check runs after the code is verified (or GitHub vouched for the emails), so
+nothing about access shows before the email is proven. Refused: `403 { error: 'access_required', message, request:
+'/request/?email=...' }`, no account, no cookie; the sign-in screen shows "Bridge opens in small groups" with Request
+access (the email filled in) and the demo. With GitHub, every verified email counts; the account is made with the one
+let in (the primary one for a link).
+
+Access links: `bridge:access:link:<sha256 of the token>` (JSON: label, createdBy (a name), createdAt, expiresAt, maxUses,
+uses, usedBy), `bridge:access:linkuse:<hash>` (the use counter, bumped atomically) and `bridge:access:links` (the list).
+The token is 32 random bytes in base64url and only its hash is kept. `GET /api/access?link=<token>` is public and answers
+`{ valid, label, inviter, expiresAt }` or `{ valid: false, reason: 'expired' | 'used' | 'unknown' }`, never an email.
+All three keys are in the daily backup.
+
+The founder's queue is `/admin/access/` (noindex). Its actions are POSTs on `/api/access` with the same CSRF header and
+the account cookie of an address of `BRIDGE_ADMIN_EMAILS` (401 with a sign-in link without a session, 403 for anyone
+else): `list`, `invite` (status `invited`, emails "Your Bridge access is open" with a Sign in to Bridge button to
+`/signin/?email=...`), `not-yet` (status `declined` with an optional note, emails an honest "Not yet"), `create-link`
+(`label`, `maxUses` 1 to 50, default 1, `days` 1 to 90, default 14; the URL comes back once) and `revoke-link`. The
+header counts the founder's invites in the current ISO week (UTC) against `ACCESS_WEEKLY_CAP`; over it, Invite still
+works and the page warns.
+
+| Name                 | Value                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| `BRIDGE_ACCESS_GATE` | `on` to require an invitation for new accounts. Unset (the default): anyone signs up. Not sensitive |
+| `ACCESS_WEEKLY_CAP`  | Optional: invites the founder means to send per week, default 5. Not sensitive          |
+
+Rollout: merge with the gate off, set `BRIDGE_ADMIN_EMAILS`, sign in as a founder, create a test link on
+`/admin/access/` and use it, then set `BRIDGE_ACCESS_GATE=on`. Locally, `npm run dev:full` passes these three variables
+from the shell or `.env.local`.
+
 ## Notifications
 
 The talk between a designer and their reviewers (the design review and the library decision) has its own emails, read from the exploration's block when a pull

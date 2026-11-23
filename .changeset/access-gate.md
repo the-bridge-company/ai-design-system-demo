@@ -1,0 +1,5 @@
+---
+'@bridge-ds/docs-site': patch
+---
+
+Bridge on invitation, the gate: with the new BRIDGE_ACCESS_GATE=on (off by default), a new account is made only for an email the founder invited (for 30 days), with an invite link, with a team invite, membership or a team open to its work domain, or for an address of BRIDGE_ADMIN_EMAILS. Existing accounts always sign in, and the check runs only once the code is right (GitHub follows the same rule). Turned down, the sign-in screen says "Bridge opens in small groups" with Request access (the email filled in) and the demo. Invite links (/signin/?access=) say who invited, work a set number of times until they expire, and only their hash is kept; a spent one says so with Request access. The founder's queue at /admin/access/ lists the requests (waiting first) with Invite and Not yet in each row, counts the week's invites against ACCESS_WEEKLY_CAP (5), creates, copies and revokes invite links. Invite emails "Your Bridge access is open", Not yet an honest note. The sign-in screen fills the email from ?email=. The links are in the daily backup.

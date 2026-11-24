@@ -23,7 +23,7 @@
 import { createContext, useContext, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { Archive, ArrowRightLeft, Ban, ChevronLeft, Ellipsis, ExternalLink, Link as LinkIcon, MonitorSmartphone, Pencil, Undo2, UserCheck, Users } from 'lucide-react';
+import { Archive, ArrowRightLeft, Ban, ChevronLeft, CircleCheck, Ellipsis, ExternalLink, Link as LinkIcon, MonitorSmartphone, Pencil, Undo2, UserCheck, Users } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -77,7 +77,8 @@ import { DEV_MESSAGE_WORDS } from '../../../lib/developers-message';
 import { useCopy } from './TeamLink';
 import { ClaudeGlyph, claudeNewUrl, ConnectClaudeButton, ConnectFirst, ToolAction, ToolPanel, useAiTools, useClaudeRecheck, type ToolLines, type ToolSetup } from './AiToolPanel';
 import { WhereItStands, type WhereItStandsView } from './WhereItStands';
-import { LibraryImpact, type LibraryImpactActions } from './LibraryImpact';
+import { LibraryImpact, LibrarySummary, type LibraryImpactActions, type LibrarySummaryLinks } from './LibraryImpact';
+import { librarySummary } from '../../../lib/library-summary';
 import type { LibraryImpactView } from '../../../lib/library-impact-view';
 import { DesignerZone, HandOverDialog, NotDoingZone, WhyDialog, type DesignerZoneView, type HandOverPerson, type LeadBarView, type NotDoingView, type PmView } from './LeadDecisions';
 import { AskQuote, CodeButton, Composer, ScreenStage, Timeline, TurnSteps, TurnZone } from './ExplorationParts';
@@ -327,7 +328,16 @@ export interface ExplorationPageProps {
    * "What this changes in the library" (boards LI1 to LI4, LI8), under the preview and the zone in every state once it
    * runs: its rows and, for the lead, the answer per piece and the way kept in a conflict. Unset: not shown yet.
    */
-  impact?: { view: LibraryImpactView; actions: LibraryImpactActions } | null;
+  impact?: {
+    view: LibraryImpactView;
+    actions: LibraryImpactActions;
+    /**
+     * Two reviews (board F of 2026-11-25): the section is a summary that sends to Library review filtered on this
+     * exploration, where every library decision is made. `decides`: the viewer decides what the library keeps, so the
+     * design review says when those decisions are all made. Unset: the old single review, decided on this page.
+     */
+    summary?: { links: LibrarySummaryLinks; decides: boolean } | null;
+  } | null;
 }
 
 /** The tool the panel has open, for the buttons further down the page (Check in Claude, the X2 action). */
@@ -542,7 +552,15 @@ function PmCall({ call, say }: { call: NonNullable<PmView['call']>; say: (s: str
  * after applying the choice on each new library piece), or Needs changes with the words that go back. Ask someone else,
  * Not doing this and Copy link sit in its "...". A comment goes in Activity's box.
  */
-function LeadTurn({ bar, line, hat = null, decisions = [], heading, designer, question, apply, extra, say }: { bar: LeadBarView; line: string; /** The design review's hat: Looks right answers the screen only. */ hat?: LeadView['hat']; /** Every decision of the library section (lib/exploration-layout leadDecisions). */ decisions?: readonly LeadDecision[]; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; /** Where the product manager stands, quiet, under the context. */ extra?: ReactNode; say: (s: string) => void }) {
+/** The viewer decided every library piece of this exploration (two reviews): the design review says only it is left. */
+function libraryDone(p: ExplorationPageProps): boolean {
+  const i = p.impact;
+  if (!i?.summary?.decides || i.view.state !== 'rows') return false;
+  const s = librarySummary(i.view, { designer: p.author.name });
+  return s.total > 0 && s.decided === s.total;
+}
+
+function LeadTurn({ bar, line, hat = null, decisions = [], heading, designer, question, apply, extra, libraryDone = false, say }: { /** Every library decision is made (two reviews): one line says the design review is what is left. */ libraryDone?: boolean; bar: LeadBarView; line: string; /** The design review's hat: Looks right answers the screen only. */ hat?: LeadView['hat']; /** Every decision of the library section (lib/exploration-layout leadDecisions). */ decisions?: readonly LeadDecision[]; heading?: string | undefined; designer: PageFace; question: string | null; apply: (() => Promise<void>) | null; /** Where the product manager stands, quiet, under the context. */ extra?: ReactNode; say: (s: string) => void }) {
   const { busy, run } = useAct(say);
   const [changes, setChanges] = useState(false);
   const [text, setText] = useState('');
@@ -617,6 +635,12 @@ function LeadTurn({ bar, line, hat = null, decisions = [], heading, designer, qu
     return (
       <TurnZone eyebrow={hat.eyebrow} title={heading ?? `Does ${who} screen look right?`} drawing="review" quote={question ? <AskQuote who={designer} verb="asks" text={question} action={<Link href="#xp-compose">Answer</Link>} /> : null} actions={review}>
         <p>{hat.as}</p>
+        {libraryDone && (
+          <p className="xp-turn-lib-done">
+            <Icon icon={CircleCheck} size="sm" />
+            Library decisions done. Your design review is left.
+          </p>
+        )}
         {line && line !== hat.as && <p>{line}</p>}
         {extra}
       </TurnZone>
@@ -1203,7 +1227,7 @@ function ExplorationBody(p: ExplorationPageProps) {
       case 'lead-take':
         return <LeadTake lead={p.lead!} say={setSaid} />;
       case 'lead-review':
-        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} hat={p.lead!.hat ?? null} decisions={decisions} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} extra={pmAside} say={setSaid} />;
+        return <LeadTurn bar={p.lead!.bar!} line={p.lead!.line} hat={p.lead!.hat ?? null} decisions={decisions} heading={p.lead!.heading} designer={p.author} question={openQuestion} apply={staged.length ? applyStaged : null} extra={pmAside} libraryDone={libraryDone(p)} say={setSaid} />;
       case 'done':
         return (
           <TurnZone
@@ -1575,7 +1599,11 @@ function ExplorationBody(p: ExplorationPageProps) {
           <div className="xp-b-left">
           <div className="xp-b-screen" id="xp-screen">{screen}</div>
           <div className="xp-b-main">
-            {p.impact ? (
+            {p.impact?.summary && p.impact.view.state === 'rows' ? (
+              <div className="xp-library" id="xp-library">
+                <LibrarySummary view={p.impact.view} designer={p.author.name} links={p.impact.summary.links} />
+              </div>
+            ) : p.impact ? (
               <div className="xp-library" id="xp-library">
                 <LibraryImpact
                   view={p.impact.view}

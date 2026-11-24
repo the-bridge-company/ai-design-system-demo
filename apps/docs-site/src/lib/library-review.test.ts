@@ -32,6 +32,9 @@ import {
   pieceOfExploration,
   publishesWithoutReview,
   reviewParams,
+  explorationKeysOf,
+  explorationOf,
+  explorationScope,
   selectionLine,
   summaryLine,
   waitLine,
@@ -213,6 +216,25 @@ describe('filters', () => {
     expect(withReviewParams('', { status: ['waiting'], asked: [], product: [] }, 'one', { reviews: false })).toBe('?asked=anyone');
     expect(reviewParams('?asked=anyone', { reviews: false }).filters.asked).toEqual([]);
     expect(withReviewParams('?x=1', { status: ['decided'], asked: ['you'], product: ['crm'] }, 'list', { reviews: true })).toBe('?x=1&status=decided&asked=you&product=crm&view=list');
+  });
+
+  it('narrows to one exploration\'s pieces, from ?from= or the older ?asked=<exploration>, for everyone', () => {
+    const all = pieces();
+    const x = all[2]!;
+    const key = x.asked!.key;
+    expect(explorationKeysOf(x)).toEqual([key.toLowerCase()]);
+    expect(all.filter((p) => passes(p, { status: [], asked: [], product: [], from: [key.toLowerCase()] }))).toEqual([x]);
+    expect(reviewParams(`?from=${encodeURIComponent(key)}`, { reviews: false }).filters).toEqual({ status: ['waiting'], asked: [], product: [], from: [key.toLowerCase()] });
+    expect(reviewParams(`?asked=${encodeURIComponent(key)}`, { reviews: true }).filters).toEqual({ status: ['waiting'], asked: [], product: [], from: [key.toLowerCase()] });
+    expect(withReviewParams('', { status: ['waiting'], asked: [], product: [], from: ['acme/prints-design#1'] }, 'list', { reviews: true })).toBe('?from=acme%2Fprints-design%231&view=list');
+    expect(explorationOf(all, key.toUpperCase())).toMatchObject({ key: key.toLowerCase(), name: x.asked!.name, designer: x.asked!.designer });
+    expect(explorationOf(all, 'nobody/x#9')).toBeNull();
+    const scope = explorationScope(all, key, { reviews: true })!;
+    expect(scope.total).toBe(1);
+    expect(scope.strong).toMatch(/^1 of 1 piece from .+ waits for you\.$/);
+    expect(scope.back).toBe(x.asked!.href ? `${x.asked!.href.replace(/#.*$/, '')}#xp-library` : null);
+    expect(explorationScope(all, key, { reviews: false })!.strong).toMatch(/waits for a decision\.$/);
+    expect(explorationScope(all.map((p) => ({ ...p, state: 'decided' as const })), key, { reviews: true })!.strong).toMatch(/^Every piece from .+ is decided\.$/);
   });
 
   it('narrows by status, asker and product', () => {

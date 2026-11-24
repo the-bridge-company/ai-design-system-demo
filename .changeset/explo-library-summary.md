@@ -1,0 +1,5 @@
+---
+'@bridge-ds/docs-site': patch
+---
+
+Exploration page, two reviews: "What this changes in the library" is a summary, never a place to decide. It says how many pieces are decided ("12 of 20 decided", with a bar), one sentence on what waits, the three open pieces that need the most thought (ways to choose from, then new pieces, then changes), each a link to that piece in Library review, "and N more", and one secondary button, "Decide in Library review" (then "Continue in Library review"). Once all are decided it says what the library took and links to the decisions; the design review then reads "Library decisions done. Your design review is left." Library review reads `?from=<exploration>` (and the older `?asked=<exploration>`): the pieces of that exploration only, for everyone, a filter at the height of the others that one click removes, "Back to <exploration>" to its library section, the summary "8 of 20 pieces from Sofia's exploration wait for you.", and once the last one is decided a line that sends back to the exploration. The old single review keeps deciding on the page.

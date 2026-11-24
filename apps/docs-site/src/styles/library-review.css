@@ -65,6 +65,70 @@ html:has(.lr) {
   color: var(--color-text-muted);
 }
 
+.lr-from-k {
+  color: var(--color-text-muted);
+}
+
+/* --- From an exploration (?from=): the way back, then "All decided" once its last piece is (board F) --------------- */
+
+.lr-scope {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.lr-scope:empty {
+  display: none;
+}
+
+.lr-scope-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  min-block-size: var(--space-6);
+  color: var(--color-text-link);
+  font-size: var(--typography-ui-size);
+  line-height: var(--typography-ui-line-height);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .lr-scope-back:hover {
+    text-decoration: underline;
+  }
+}
+
+.lr-scope-back:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-inset);
+}
+
+.lr-scope-done {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  inline-size: 100%;
+  box-sizing: border-box;
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.lr-scope-done-text {
+  flex: 1 1 var(--size-80);
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.lr-scope-done-text strong {
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-semibold);
+}
+
 /* --- The exploration chip: the exploration and its product, one click to its page ---------------------------------- */
 
 .lr-ask {

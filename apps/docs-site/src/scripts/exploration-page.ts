@@ -1363,7 +1363,7 @@ async function paintLibraryImpact(
     product: o.product.name,
     designerHere,
     // Where a choice this page does not offer is made: this exploration's pieces in Library review.
-    reviewHref: studioHref(`${LIBRARY_REVIEW_ROUTE}?asked=${encodeURIComponent(mine.key)}`),
+    reviewHref: studioHref(`${LIBRARY_REVIEW_ROUTE}?from=${encodeURIComponent(mine.key.toLowerCase())}`),
     products: o.products.filter((p) => p.default !== true).map((p) => p.name),
     released,
     names: o.names,
@@ -1478,8 +1478,24 @@ async function paintLibraryImpact(
   const handoff = check && current.props.handoff ? { handoff: { ...current.props.handoff, check: { ...check, rows: withLibraryWait(check.rows, wait) } } } : {};
   // Two reviews: the design review's Looks right never waits on a library choice.
   const blocked = hats ? null : looksRightBlock(conflicts);
+  // Two reviews (board F of 2026-11-25): the section sums up and sends to Library review, filtered on this exploration.
+  const from = `${LIBRARY_REVIEW_ROUTE}?from=${encodeURIComponent(mine.key.toLowerCase())}`;
+  const summary = hats
+    ? {
+        decides: libraryHat,
+        links: {
+          href: studioHref(`${from}&view=list`),
+          decidedHref: studioHref(`${from}&status=decided&view=list`),
+          pieceHref: (row: { id: string }, conflict: boolean) => {
+            const cv = conflict && view.state === 'rows' ? view.conflicts.find((c) => c.piece === row.id) : null;
+            const piece = cv ? `x:${cv.component.toLowerCase()}|${cv.property.toLowerCase()}` : `p:${mine.key.toLowerCase()}:${row.id}`;
+            return studioHref(`${from}&piece=${encodeURIComponent(piece)}`);
+          },
+        },
+      }
+    : null;
   repaint(d, key, {
-    impact: { view, actions },
+    impact: { view, actions, summary },
     ...handoff,
     ...(lead && (leadLine || lead.bar) ? { lead: { ...lead, ...(leadLine && !lead.heading ? { line: leadLine } : {}), ...(lead.bar ? { bar: { ...lead.bar, blocked } } : {}) } } : {}),
   });

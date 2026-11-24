@@ -835,8 +835,8 @@ export function LibrarySummary({ view, designer, links, headingLevel = 2 }: { vi
         <H className="li-title" id={`${id}-h`}>
           What this changes in the library
         </H>
-        <span className="li-sum-count">
-          <span className="li-muted li-count">{s.count}</span>
+        <span className="li-sum-progress">
+          <span className="li-sum-tally">{s.count}</span>
           <Progress value={s.decided} max={Math.max(s.total, 1)} size="sm" className="li-sum-bar" aria-label={s.count} />
         </span>
       </header>
@@ -845,6 +845,7 @@ export function LibrarySummary({ view, designer, links, headingLevel = 2 }: { vi
         <ul className="li-sum-rows" aria-label="Pieces that wait">
           {s.rows.map((r) => (
             <li key={r.id}>
+              {/* bridge-audit-ignore-next-line: the whole piece row (its name, what changes, its tag) is one target that opens the piece in Library review, like the Library review rows; the DS has no row link and Link would cut it to one label */}
               <a className="li-sum-row" href={r.href ?? links.href}>
                 <span className="li-tile" aria-hidden="true">
                   <Icon icon={siteIcon('diamonds')} size="sm" />

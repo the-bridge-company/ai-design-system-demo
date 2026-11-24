@@ -753,11 +753,18 @@
 /* --- The exploration page's summary (two reviews, board F of 2026-11-25): count, one sentence, three rows, one way to
    Library review ----------------------------------------------------------------------------------------------------- */
 
-.li-sum-count {
+.li-sum-progress {
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: var(--space-3);
+}
+
+.li-sum-tally {
+  color: var(--color-text-muted);
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
+  white-space: nowrap;
 }
 
 .li-sum-bar {

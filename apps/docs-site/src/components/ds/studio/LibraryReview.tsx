@@ -1358,10 +1358,10 @@ function ScopeHead({ scope }: { scope: NonNullable<ReturnType<typeof exploration
   return (
     <div className="lr-scope">
       {scope.back && (
-        <a className="lr-scope-back" href={scope.back}>
+        <Link className="lr-scope-back" href={scope.back}>
           <Icon icon={ArrowLeft} size="sm" />
           Back to {name}
-        </a>
+        </Link>
       )}
       {scope.total > 0 && scope.left === 0 && (
         <div className="lr-scope-done" role="status">

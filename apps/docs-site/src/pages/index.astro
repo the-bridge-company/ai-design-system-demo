@@ -36,7 +36,6 @@ import HpConnectCard from '../components/home/HpConnectCard';
 import HandUnderline from '../components/site/HandUnderline.astro';
 import HpFounding from '../components/home/HpFounding.astro';
 import { HOME_FOUNDING } from '../lib/pricing';
-import { ACCESS_WORDS } from '../lib/access-request';
 import { DEMO, REQUEST } from '../lib/nav';
 
 ---
@@ -59,7 +58,6 @@ import { DEMO, REQUEST } from '../lib/nav';
           <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={DEMO}>Open the demo</ButtonLink>
           <ButtonLink variant="secondary" size="lg" href={REQUEST} data-session-cta=""><span data-session-cta-label>Request access</span></ButtonLink>
         </div>
-        <p class="hp-go-note">{ACCESS_WORDS.heroNote}</p>
       </div>
       <div class="hp-hero-vis">
         <HpHeroScene />

@@ -45,10 +45,10 @@ describe('homepage sections', () => {
   it('tells the hero as a drawn story, with no slider left, and keeps one call to action', () => {
     expect(page).toContain('<HpHeroScene />');
     expect(page).not.toMatch(/type="range"|data-range|data-hero|Drag: your|HpPencil|HpGhost|HpProfile/);
-    // The demo leads; Request access keeps the session swap (Open Studio for someone signed in), with one quiet line.
+    // The demo leads; Request access keeps the session swap (Open Studio for someone signed in), with no line under them.
     expect(page).toMatch(/<ButtonLink variant="primary" size="lg" iconEnd=\{ArrowRight\} href=\{DEMO\}>Open the demo<\/ButtonLink>/);
     expect(page).toContain('href={REQUEST} data-session-cta=""><span data-session-cta-label>Request access</span></ButtonLink>');
-    expect(page).toContain('{ACCESS_WORDS.heroNote}');
+    expect(page).not.toMatch(/hp-go-note|heroNote|Access opens in small groups/);
     expect(page).not.toContain('no account needed');
     const scene = readFileSync(join(ROOT, 'apps/docs-site/src/components/home/HpHeroScene.astro'), 'utf8');
     expect(scene).toMatch(/role="img" aria-label="Dana[^"]+Profile header[^"]+code and the Figma kit follow\."/);

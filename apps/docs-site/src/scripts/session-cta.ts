@@ -22,6 +22,9 @@ export async function initSessionCta(): Promise<void> {
     return;
   }
   if (!cta) return;
+  // A place that shows a different set signed in (the home hero): the member's buttons appear, the visitor's go.
+  for (const el of document.querySelectorAll<HTMLElement>('[data-session-member]')) el.hidden = false;
+  for (const el of document.querySelectorAll<HTMLElement>('[data-session-visitor]')) el.hidden = true;
   for (const a of ctas) {
     a.setAttribute('href', cta.href);
     const label = a.querySelector<HTMLElement>('[data-session-cta-label]');

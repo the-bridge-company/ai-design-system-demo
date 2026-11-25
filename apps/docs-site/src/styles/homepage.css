@@ -200,6 +200,11 @@
   margin-top: var(--space-10);
 }
 
+/* The signed-in and signed-out buttons swap with [hidden]; a button's own display never shows the hidden one. */
+.hp-go [hidden] {
+  display: none;
+}
+
 /* One quiet line under the pair: access opens in small groups. */
 
 /* The drawing (components/home/HpHeroScene.astro): under the text on phones and tablets, full width up to its

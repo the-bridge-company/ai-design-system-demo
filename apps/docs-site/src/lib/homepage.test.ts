@@ -45,10 +45,13 @@ describe('homepage sections', () => {
   it('tells the hero as a drawn story, with no slider left, and keeps one call to action', () => {
     expect(page).toContain('<HpHeroScene />');
     expect(page).not.toMatch(/type="range"|data-range|data-hero|Drag: your|HpPencil|HpGhost|HpProfile/);
-    // The demo leads; Request access is a link beside it (as See planned prices next to Founding's button), keeps the
-    // session swap (Open Studio for someone signed in), and no line sits under them.
-    expect(page).toMatch(/<ButtonLink variant="primary" size="lg" iconEnd=\{ArrowRight\} href=\{DEMO\}>Open the demo<\/ButtonLink>/);
-    expect(page).toContain('<ButtonLink variant="link" size="lg" href={REQUEST} data-session-cta=""><span data-session-cta-label>Request access</span></ButtonLink>');
+    // Signed out, the demo leads and Request access is a link beside it (as See planned prices next to Founding's
+    // button); no line sits under them.
+    expect(page).toMatch(/<ButtonLink variant="primary" size="lg" iconEnd=\{ArrowRight\} href=\{DEMO\} data-session-visitor="">Open the demo<\/ButtonLink>/);
+    expect(page).toContain('<ButtonLink variant="link" size="lg" href={REQUEST} data-session-visitor="">Request access</ButtonLink>');
+    // Signed in, one primary instead: Open Studio (scripts/session-cta.ts shows it and hides the visitor's pair).
+    expect(page).toContain('data-session-cta="" data-session-member="" hidden><span data-session-cta-label>Open Studio</span></ButtonLink>');
+    expect(page).toMatch(/href=\{DEMO\} data-session-visitor="">Open the demo/);
     expect(page).not.toMatch(/hp-go-note|heroNote|Access opens in small groups/);
     expect(page).not.toContain('no account needed');
     const scene = readFileSync(join(ROOT, 'apps/docs-site/src/components/home/HpHeroScene.astro'), 'utf8');

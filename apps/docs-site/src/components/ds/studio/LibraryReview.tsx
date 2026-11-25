@@ -11,7 +11,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleCheck, Ellipsis, Info, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleCheck, Ellipsis, Info } from 'lucide-react';
 import { FilterRow, MultiFilter } from './ListFilters';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
@@ -101,7 +101,7 @@ interface Pending {
  * A filter: Studio's one filter pattern (ListFilters MultiFilter), "Status Waiting", several values at once, each
  * option with its count over what the other filters keep.
  */
-function FilterMenu({ name, kind, picked, choices, count, onChange }: { name: string; kind: 'status' | 'asked' | 'product'; picked: string[]; choices: FilterChoice[]; count: (value: string) => number; onChange: (v: string[]) => void }) {
+function FilterMenu({ name, kind, picked, choices, count, onChange }: { name: string; kind: 'status' | 'asked' | 'exploration' | 'product'; picked: string[]; choices: FilterChoice[]; count: (value: string) => number; onChange: (v: string[]) => void }) {
   return <MultiFilter label={name} all={filterValue(kind, [], choices)} options={choices.map((c) => ({ ...c, count: count(c.value) }))} picked={picked} onPick={onChange} />;
 }
 
@@ -954,47 +954,66 @@ function AskedByCell({ p }: { p: ReviewPiece }) {
 }
 
 /**
- * The List's From cell: the exploration it came from on one line (its full name on hover when the column is narrow),
- * its product under it in muted text, then "+N" that opens every exploration grouped by product. A piece no
- * exploration asked for says "Asked directly", in the same place, in muted text.
+ * The List's Exploration cell (owner, 2026-11-25: one kind of info per column, tags only, never text and a tag
+ * mixed): the exploration it came from as a tag that opens it (its full name on hover when the column is narrow),
+ * then "+N" that opens every exploration grouped by product. A piece no exploration asked for says "Asked directly"
+ * in muted text, the one cell with no tag.
  */
-function FromCell({ p }: { p: ReviewPiece }) {
+function ExplorationCell({ p }: { p: ReviewPiece }) {
   const { from } = askedColumns(p);
-  if (from.kind === 'direct')
-    return (
-      <span className="lr-from">
-        <span className="lr-from-line">
-          <span className="lr-from-name lr-muted">{directWords(p)}</span>
-        </span>
-      </span>
-    );
+  if (from.kind === 'direct') return <span className="lr-tags lr-muted">{directWords(p)}</span>;
   const a = from.first;
+  const tag = (
+    <Badge tone="neutral" size="sm" className="lr-tag-name" title={a.name}>
+      {a.name}
+    </Badge>
+  );
   return (
-    <span className="lr-from">
-      <span className="lr-from-line">
-        {a.href ? (
-          <Link href={a.href} variant="subtle" className="lr-from-name" title={a.name}>
-            {a.name}
-          </Link>
-        ) : (
-          <span className="lr-from-name" title={a.name}>
-            {a.name}
-          </span>
-        )}
-        {from.more > 0 && (
-          <Popover>
-            <PopoverTrigger render={<Button variant="ghost" size="sm" className="lr-from-more" aria-label={`${moreTag(from.more).label} asked for ${p.title}`} />}>
-              <Badge tone="neutral" size="sm" className="lr-more-tag">
-                {moreTag(from.more).tag}
-              </Badge>
-            </PopoverTrigger>
-            <PopoverContent title={`${from.all.length} explorations asked for it`} align="start" className="lr-askers-pop">
-              <AskersList list={from.all} />
-            </PopoverContent>
-          </Popover>
-        )}
-      </span>
-      {from.product && <span className="lr-muted lr-from-product">{from.product}</span>}
+    <span className="lr-tags">
+      {a.href ? (
+        <Link href={a.href} variant="subtle" className="lr-tag-link" aria-label={`Open ${a.name}`}>
+          {tag}
+        </Link>
+      ) : (
+        tag
+      )}
+      {from.more > 0 && (
+        <Popover>
+          <PopoverTrigger render={<Button variant="ghost" size="sm" className="lr-tag-more" aria-label={`${moreTag(from.more).label} asked for ${p.title}`} />}>
+            <Badge tone="neutral" size="sm" className="lr-more-tag">
+              {moreTag(from.more).tag}
+            </Badge>
+          </PopoverTrigger>
+          <PopoverContent title={`${from.all.length} explorations asked for it`} align="start" className="lr-askers-pop">
+            <AskersList list={from.all} />
+          </PopoverContent>
+        </Popover>
+      )}
+    </span>
+  );
+}
+
+/**
+ * The List's Product cell: the product of the most recent exploration as a tag, then "+N" for the others, every name
+ * on hover. A lead's own change says Library, as the Product filter does.
+ */
+function ProductCell({ p }: { p: ReviewPiece }) {
+  const { from } = askedColumns(p);
+  const names = from.kind === 'exploration' ? from.products : [];
+  const list = names.length ? names : from.kind === 'direct' ? ['Library'] : [];
+  if (!list.length) return null;
+  return (
+    <span className="lr-tags">
+      <Badge tone="neutral" size="sm" className="lr-tag-name" title={list[0]}>
+        {list[0]}
+      </Badge>
+      {list.length > 1 && (
+        <Tooltip content={list.join(', ')}>
+          <Badge tone="neutral" size="sm" className="lr-more-tag" tabIndex={0} aria-label={`${list.length - 1} more ${list.length === 2 ? 'product' : 'products'}: ${list.slice(1).join(', ')}`}>
+            {moreTag(list.length - 1, 'products').tag}
+          </Badge>
+        </Tooltip>
+      )}
     </span>
   );
 }
@@ -1007,10 +1026,10 @@ const pieceHref = (key: string) => (typeof location === 'undefined' ? `?piece=${
  * Components, Docs) with its icon, name, count, one line and what it reaches, then one card where each group's name
  * sits on top of its rows (lib/library-review-list chaptersOf). The column header is inside the card, on
  * the row grid, in sentence case:
- *   Waiting, lead:  [box] | Today › After | Piece | Asked by | From | Who gets it | State | Next | action
- *   Decided:        Today › After | Piece | Asked by | From | Who gets it | State (the result)
- *   Designer:       Today › After | Piece | Asked by | From | Who gets it | State (what changed, an exception)
- * Asked by is a face and a first name, From the exploration on one line with its product under it ("Asked directly"
+ *   Waiting, lead:  [box] | Today › After | Piece | Asked by | Exploration | Product | Who gets it | State | Next | action
+ *   Decided:        Today › After | Piece | Asked by | Exploration | Product | Who gets it | State (the result)
+ *   Designer:       Today › After | Piece | Asked by | Exploration | Product | Who gets it | State (what changed, an exception)
+ * Asked by is a face and a first name, Exploration and Product a tag each with "+N" ("Asked directly"
  * when none): one kind of info per column, the same anatomy on every row (lib/library-askers askedColumns). Every card
  * shares one grid, from every row of the list (lib/library-review-list listGrid); when the list runs out of room, Who
  * gets it folds first, then Today › After, then the rows stack (styles/library-review.css).
@@ -1047,18 +1066,12 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
   };
   // The State column: a conflict's ways, a result, the viewer's own approval, an exception; a waiting row, how long it
   // has waited, the same tag as its Home row (home-model waitPill, amber once late).
-  const state = (p: ReviewPiece) => {
+  const state = (p: ReviewPiece, age = false) => {
     const d = decidedTag(p);
     if (d)
       return (
         <Badge tone={d.tone} size="md" className={statusTagClass(d.tone)}>
           {d.label}
-        </Badge>
-      );
-    if (p.conflict && !p.conflict.pick)
-      return (
-        <Badge tone={pieceWaitTone(p)} size="md" className={statusTagClass(pieceWaitTone(p))}>
-          {waysTag(p.conflict.ways.length)}
         </Badge>
       );
     if (p.mine && p.designApproved)
@@ -1077,9 +1090,19 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       );
     if (p.state === 'waiting' && p.at && mode === 'lead') {
       const w = waitPill(p.at, Date.now());
+      // Under a Waiting header the tag says the days alone ("13 days"), grey until the reminder's day, amber after.
+      // Stacked rows have no header: "Waiting" shows again in front (styles/library-review.css .lr-age-k).
+      const days = w.label === 'New today' ? 'today' : w.label.replace(/^Waiting /, '');
       return (
         <Badge tone={w.tone} size="md" className={statusTagClass(w.tone, 'lr-age')}>
-          {w.label}
+          {age ? (
+            <>
+              <span className="lr-age-k">Waiting </span>
+              <span className="lr-age-days">{days}</span>
+            </>
+          ) : (
+            w.label
+          )}
         </Badge>
       );
     }
@@ -1114,15 +1137,17 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
       action: mode !== 'designer' && rows.some((p) => action(p) !== null),
     });
     const showState = cols.includes('state');
+    // Every filled State cell is a wait: the column says Waiting and its tags the days alone.
+    const age = mode === 'lead' && rows.every((p) => !decidedTag(p) && !p.exception && !(p.mine && p.designApproved));
     const grid = listGrid({
       box: boxes,
       askedMore: rows.some((p) => askedColumns(p).morePeople > 0),
-      state: !showState ? 'none' : rows.every((p) => !decidedTag(p) && !p.exception && !(p.mine && p.designApproved)) ? 'tag' : 'words',
+      state: !showState ? 'none' : age ? 'age' : 'words',
       next: cols.includes('next'),
       action: cols.includes('action'),
     });
     const style = { ['--lr-cols-wide' as string]: grid.wide, ['--lr-cols-mid' as string]: grid.mid, ['--lr-cols-narrow' as string]: grid.narrow };
-    return { showState, showNext: cols.includes('next'), showAction: cols.includes('action'), style, slotState: false, slotNext: false, slotAction: false };
+    return { showState, age, showNext: cols.includes('next'), showAction: cols.includes('action'), style, slotState: false, slotNext: false, slotAction: false };
   };
   type Cols = ReturnType<typeof colsOf>;
   // Every chapter card lines up on one grid (owner, 2026-11-13: the same column starts from card to card, so the eye
@@ -1130,9 +1155,9 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
   // room as an empty slot, with no header word, instead of letting the next columns slide left.
   const sharedCols = (rows: readonly ReviewPiece[], all: Cols): Cols => {
     const own = colsOf(rows);
-    return { ...own, style: all.style, slotState: all.showState, slotNext: all.showNext, slotAction: all.showAction };
+    return { ...own, age: all.age, style: all.style, slotState: all.showState, slotNext: all.showNext, slotAction: all.showAction };
   };
-  const row = (p: ReviewPiece, { showState, showNext, showAction, slotState, slotNext, slotAction }: Cols) => {
+  const row = (p: ReviewPiece, { showState, age, showNext, showAction, slotState, slotNext, slotAction }: Cols) => {
     const actor = mode === 'lead' ? nextActor(p, { tech, secondLead }) : null;
     const m = measure(p);
     const c = reachCell(m);
@@ -1174,20 +1199,24 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
               <span className="lr-row-title">{p.title}</span>
             )}
           </span>
-          <span className="lr-muted lr-row-kind">{p.kind}</span>
+          {/* A conflict's ways read after its kind, in the same muted words: no tag in the Piece cell. */}
+          <span className="lr-muted lr-row-kind">{p.conflict && !p.conflict.pick ? `${p.kind}${SEP}${waysTag(p.conflict.ways.length)}` : p.kind}</span>
         </span>
         <span role="cell" className="lr-row-ask">
           <AskedByCell p={p} />
         </span>
         <span role="cell" className="lr-row-from">
-          <FromCell p={p} />
+          <ExplorationCell p={p} />
+        </span>
+        <span role="cell" className="lr-row-product">
+          <ProductCell p={p} />
         </span>
         <span role="cell" className="lr-row-reach lr-col-reach">
           {p.source.kind !== 'docs' && <ReachLink p={p} cell={c.label} onReach={onReach} quiet hoverOnly={c.hoverOnly} />}
         </span>
         {showState ? (
           <span role="cell" className="lr-row-state">
-            {state(p)}
+            {state(p, age)}
           </span>
         ) : (
           slotState && <span role="cell" className="lr-row-state" />
@@ -1230,7 +1259,7 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
         const someOn = pickable.some((p) => selected.has(p.key));
         const { labels, rail } = railOf(ch);
         const c = sharedCols(rows, listCols);
-        const { showState, showNext, showAction, slotState, slotNext, slotAction } = c;
+        const { showState, age, showNext, showAction, slotState, slotNext, slotAction } = c;
         return (
           // A chapter is a plain wrapper: ARIA has no group of row groups, so its head row (with its h2) and each
           // group's rowgroup sit straight in the table (WCAG 1.3.1).
@@ -1265,11 +1294,12 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                 </span>
                 <span role="columnheader">Piece</span>
                 <span role="columnheader">Asked by</span>
-                <span role="columnheader">From</span>
+                <span role="columnheader">Exploration</span>
+                <span role="columnheader">Product</span>
                 <span role="columnheader" className="lr-col-reach">
                   Who gets it
                 </span>
-                {showState ? <span role="columnheader">State</span> : slotState && <span role="columnheader"><VisuallyHidden>State</VisuallyHidden></span>}
+                {showState ? <span role="columnheader">{age ? 'Waiting' : 'State'}</span> : slotState && <span role="columnheader"><VisuallyHidden>{age ? 'Waiting' : 'State'}</VisuallyHidden></span>}
                 {showNext ? <span role="columnheader">Next</span> : slotNext && <span role="columnheader"><VisuallyHidden>Next</VisuallyHidden></span>}
                 {showAction ? (
                   <span role="columnheader" className="lr-col-end">
@@ -1503,7 +1533,7 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
     if (!data || data.loading || data.failed) return null;
     const f = params?.filters ?? { status: ['waiting'], asked: [], product: [] };
     // Filtered on one exploration (its page's "Decide in Library review"): its pieces, for everyone.
-    const from = f.from?.[0] ? explorationScope(withLocal(data.pieces ?? [], local), f.from[0], { reviews: data.viewer.reviews }) : null;
+    const from = f.from?.length === 1 ? explorationScope(withLocal(data.pieces ?? [], local), f.from[0]!, { reviews: data.viewer.reviews }) : null;
     if (from) return { strong: from.strong, rest: from.rest };
     if (!data.viewer.reviews) return null;
     const decidedView = f.status.length === 1 && f.status[0] === 'decided';
@@ -1736,9 +1766,10 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   const onlyWaiting = filters.status.length === 1 && filters.status[0] === 'waiting';
   const nothingWaits = !data.loading && onlyWaiting && !(v.reviews ? waitingAll : waitingAll.filter((p) => p.mine)).length;
   const defaultAsked = v.reviews ? !filters.asked.length : filters.asked.length === 1 && filters.asked[0] === YOU;
-  const fromKey = filters.from?.[0] ?? null;
+  // The way back and the page summary for one exploration: only while exactly one is picked.
+  const fromKey = filters.from?.length === 1 ? filters.from[0]! : null;
   const scope = fromKey ? explorationScope(pieces, fromKey, { reviews: v.reviews }) : null;
-  const filtered = !onlyWaiting || !defaultAsked || filters.product.length > 0 || Boolean(fromKey);
+  const filtered = !onlyWaiting || !defaultAsked || filters.product.length > 0 || Boolean(filters.from?.length);
   const unscope = () => update({ ...filters, from: [] });
   const banner = designerBanner(data.lead);
   const empty = emptyLine(decidedAll, v, data.lead);
@@ -1803,14 +1834,11 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
         <>
           {scope && <ScopeHead scope={scope} />}
           <FilterRow className="lr-bar-row">
-            {fromKey && (
-              // The exploration filter, at the height of the others: one click shows every piece again.
-              <Button variant="secondary" size="md" className="lr-from" iconEnd={X} onClick={unscope} aria-label={`Remove the filter: from ${scope?.exploration.name ?? 'one exploration'}`}>
-                <span className="lr-from-k">From</span> {scope?.exploration.name ?? 'one exploration'}
-              </Button>
-            )}
             <FilterMenu name="Status" kind="status" picked={filters.status} choices={STATUS_CHOICES} count={(s) => countWith({ ...filters, status: [s as ReviewFilters['status'][number]] })} onChange={(s) => update({ ...filters, status: s as ReviewFilters['status'] })} />
             <FilterMenu name="Asked by" kind="asked" picked={filters.asked} choices={choices.asked} count={(a) => countWith({ ...filters, asked: [a] })} onChange={(a) => update({ ...filters, asked: a })} />
+            {/* Exploration, a filter like the others (owner, 2026-11-25): always there, set by the exploration page's
+                "Decide in Library review" (?from=), named as its column. */}
+            <FilterMenu name="Exploration" kind="exploration" picked={filters.from ?? []} choices={choices.exploration} count={(x) => countWith({ ...filters, from: [x] })} onChange={(x) => update({ ...filters, from: x })} />
             <FilterMenu name="Product" kind="product" picked={filters.product} choices={choices.product} count={(pr) => countWith({ ...filters, product: [pr] })} onChange={(pr) => update({ ...filters, product: pr })} />
             {filtered && (
               <Button variant="link" className="lr-clear" onClick={() => update({ status: ['waiting'], asked: v.reviews ? [] : [YOU], product: [] })}>

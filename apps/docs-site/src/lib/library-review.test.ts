@@ -251,6 +251,13 @@ describe('filters', () => {
     if (leo) expect(all.filter((p) => passes(p, { status: [], asked: [personKey(peopleOf(leo)[0]!)], product: [] }))).toContain(leo);
     expect(filterValue('asked', ['you', choices.asked[1]!.value], choices.asked)).toBe('You +1');
     expect(filterValue('status', ['waiting'], [{ value: 'waiting', label: 'Waiting' }])).toBe('Waiting');
+    // Exploration is always a filter (owner, 2026-11-25): every exploration a piece comes from, by its key, as ?from= reads it.
+    const named = all.find((p) => p.asked);
+    if (named) {
+      expect(choices.exploration).toContainEqual({ value: named.asked!.key.toLowerCase(), label: named.asked!.name });
+      expect(all.filter((p) => passes(p, { status: [], asked: [], product: [], from: [named.asked!.key.toLowerCase()] }))).toContain(named);
+    }
+    expect(filterValue('exploration', [], choices.exploration)).toBe('All explorations');
   });
   it('"Asked by: You" lists only what the viewer asked for: a change Malik builds for Sofia is Sofia\'s', () => {
     // Malik made the change (mine), Leo's exploration asked for it: under Malik's "You" it does not show.

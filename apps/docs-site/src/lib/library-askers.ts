@@ -117,7 +117,7 @@ export const faceName = (a: Pick<AskedBy, 'designer' | 'name'>): string => a.des
 export const firstName = (name: string): string => (name.trim() === AGENT_NAME ? AGENT_NAME : name.trim().split(/\s+/)[0] || name);
 
 /** Where a piece came from, as the From column reads it: an exploration (and how many more), or asked directly. */
-export type AskedFrom = { kind: 'direct' } | { kind: 'exploration'; first: AskedBy; more: number; all: AskedBy[]; product: string | null };
+export type AskedFrom = { kind: 'direct' } | { kind: 'exploration'; first: AskedBy; more: number; all: AskedBy[]; product: string | null; products: string[] };
 
 /**
  * The List's two columns for who asked (owner, 2026-11-12: one kind of info per column, the same anatomy on every
@@ -136,9 +136,12 @@ export interface AskedColumns {
   from: AskedFrom;
 }
 
-/** The line under the exploration: its product, or "2 products" when the explorations span several. */
+/** Every product the explorations come from, once each, the most recent exploration's first: the Product column. */
+const productsOf = (list: readonly AskedBy[]): string[] => [...new Set(list.map((a) => a.product).filter((x): x is string => Boolean(x)))];
+
+/** One line for the products: the product, or "2 products" when the explorations span several. */
 function productLine(list: readonly AskedBy[]): string | null {
-  const names = [...new Set(list.map((a) => a.product).filter((x): x is string => Boolean(x)))];
+  const names = productsOf(list);
   return names.length <= 1 ? (names[0] ?? null) : `${names.length} products`;
 }
 
@@ -148,7 +151,7 @@ export function askedColumns(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict' 
     : askersOf(p);
   const people = [...new Set(explorations.map((a) => a.designer).filter((x): x is string => Boolean(x)).map(firstName))];
   const list = people.length ? people : [p.mine ? 'You' : p.by ? firstName(p.by) : 'A lead'];
-  const from: AskedFrom = explorations.length ? { kind: 'exploration', first: explorations[0]!, more: explorations.length - 1, all: explorations, product: productLine(explorations) } : { kind: 'direct' };
+  const from: AskedFrom = explorations.length ? { kind: 'exploration', first: explorations[0]!, more: explorations.length - 1, all: explorations, product: productLine(explorations), products: productsOf(explorations) } : { kind: 'direct' };
   return { person: list[0]!, people: list, morePeople: list.length - 1, from };
 }
 

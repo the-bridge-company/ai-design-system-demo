@@ -620,6 +620,11 @@ export interface ReviewFilters {
   asked: string[];
   /** Empty: every product. Product keys; "library" for the lead's own changes. */
   product: string[];
+  /**
+   * Empty or left out: every exploration. Exploration keys ("owner/repo#12"): the pieces those explorations change, the
+   * exploration page's "Decide in Library review" (?from=), with a way back to it.
+   */
+  from?: string[];
 }
 
 export const YOU = 'you';
@@ -635,9 +640,14 @@ const listParam = (q: URLSearchParams, k: string) =>
 export function reviewParams(search: string, o: { reviews: boolean }): { filters: ReviewFilters; view: ReviewView } {
   const q = new URLSearchParams(search);
   const status = q.has('status') ? listParam(q, 'status').filter((s): s is PieceState => s === 'waiting' || s === 'decided') : ['waiting' as const];
-  const asked = q.has('asked') ? listParam(q, 'asked').filter((s) => s !== 'anyone') : o.reviews ? [] : [YOU];
+  const askedAll = q.has('asked') ? listParam(q, 'asked').filter((s) => s !== 'anyone') : o.reviews ? [] : [YOU];
+  // An exploration's key in ?asked= (the exploration page's older link) is the exploration filter.
+  const isKey = (s: string) => /#\d+$/.test(s);
+  const from = [...new Set([...listParam(q, 'from'), ...askedAll.filter(isKey)].map((s) => s.toLowerCase()))];
+  const asked = askedAll.filter((s) => !isKey(s));
   const product = listParam(q, 'product');
-  return { filters: { status, asked, product }, view: viewOf(q.get('view')) };
+  // From an exploration, everyone sees its pieces: a designer's own-pieces default would hide the others' ways.
+  return { filters: { status, asked: from.length && !q.has('asked') ? [] : asked, product, ...(from.length ? { from } : {}) }, view: viewOf(q.get('view')) };
 }
 
 /** The address with these filters and view: the defaults are left out, so a plain link opens the plain page. */
@@ -651,6 +661,8 @@ export function withReviewParams(search: string, f: ReviewFilters, view: ReviewV
   set('asked', f.asked, o.reviews ? [] : [YOU]);
   if (f.product.length) q.set('product', f.product.join(','));
   else q.delete('product');
+  if (f.from?.length) q.set('from', f.from.join(','));
+  else q.delete('from');
   if (view === 'one') q.delete('view');
   else q.set('view', view);
   const s = q.toString();
@@ -663,7 +675,64 @@ export function passes(p: ReviewPiece, f: ReviewFilters, viewerName: string | nu
   if (f.status.length && !f.status.includes(p.state)) return false;
   if (f.asked.length && !f.asked.some((a) => (a === YOU ? askedByViewer(p, viewerName) : peopleOf(p).some((n) => personKey(n) === a)))) return false;
   if (f.product.length && !f.product.includes(productKeyOf(p))) return false;
+  if (f.from?.length && !explorationKeysOf(p).some((k) => f.from!.includes(k))) return false;
   return true;
+}
+
+/** Every exploration a piece comes from (lowercase keys): the one that asked, the others that asked too, each way of a conflict. */
+export function explorationKeysOf(p: Pick<ReviewPiece, 'asked' | 'also' | 'conflict'>): string[] {
+  const keys = [p.asked?.key, ...(p.also ?? []).map((a) => a.key), ...(p.conflict?.ways ?? []).map((w) => w.key)];
+  return [...new Set(keys.filter((k): k is string => Boolean(k)).map((k) => k.toLowerCase()))];
+}
+
+export interface ExplorationScope {
+  exploration: { key: string; name: string; designer: string | null; href: string | null };
+  total: number;
+  left: number;
+  /** The page summary while filtered on it: "8 of 20 pieces from Sofia's exploration wait for you." */
+  strong: string;
+  rest: string;
+  /** Back to the exploration, on its library section: null when the pieces do not know its page. */
+  back: string | null;
+}
+
+/**
+ * Library review filtered on one exploration (?from=): how many of its pieces wait, said as the page summary, and the
+ * way back to its library section. Null when no piece names the exploration.
+ */
+export function explorationScope(pieces: readonly ReviewPiece[], key: string, o: { reviews: boolean }): ExplorationScope | null {
+  const exploration = explorationOf(pieces, key);
+  if (!exploration) return null;
+  const mine = pieces.filter((p) => explorationKeysOf(p).includes(exploration.key));
+  const left = mine.filter((p) => p.state === 'waiting').length;
+  const total = mine.length;
+  const whose = exploration.designer ? `${/s$/i.test(exploration.designer) ? `${exploration.designer}'` : `${exploration.designer}'s`} exploration` : exploration.name;
+  const pieceWord = total === 1 ? 'piece' : 'pieces';
+  const strong = left
+    ? `${left} of ${total} ${pieceWord} from ${whose} ${left === 1 ? 'waits' : 'wait'} for ${o.reviews ? 'you' : 'a decision'}.`
+    : `Every piece from ${whose} is decided.`;
+  return {
+    exploration,
+    total,
+    left,
+    strong,
+    rest: `The design review of ${exploration.name} stays on the exploration.`,
+    back: exploration.href ? `${exploration.href.replace(/#.*$/, '')}#xp-library` : null,
+  };
+}
+
+/** The exploration a filter names, as the pieces know it: its name, its designer and its page. Null when no piece names it. */
+export function explorationOf(pieces: readonly ReviewPiece[], key: string): { key: string; name: string; designer: string | null; href: string | null } | null {
+  const k = key.toLowerCase();
+  for (const p of pieces) {
+    const a = [p.asked, ...(p.also ?? [])].find((x) => x?.key.toLowerCase() === k);
+    if (a) return { key: k, name: a.name, designer: a.designer, href: a.href };
+  }
+  for (const p of pieces) {
+    const w = p.conflict?.ways.find((x) => x.key.toLowerCase() === k);
+    if (w) return { key: k, name: w.exploration, designer: w.designer, href: null };
+  }
+  return null;
 }
 
 export interface FilterChoice {

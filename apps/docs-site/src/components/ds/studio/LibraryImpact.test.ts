@@ -4,13 +4,13 @@
 // same rows without ticks, and a settled choice folds into one sentence with Change.
 import '../../../../../../packages/react/src/test/setup';
 import { createElement } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { explorationKeyOf, explorationPrBody, libraryConflicts, parseExplorationBody, withExplorationLibrary, withLibraryChoice, withPiecesRecord, type MissingPiece } from '@bridge-ds/core';
 import { expectNoAxeViolations } from '../../../../../../packages/react/src/test/axe';
 import { KEEP_TODAY, libraryImpactView } from '../../../lib/library-impact-view';
-import { LibraryImpact } from './LibraryImpact';
+import { LibraryImpact, LibrarySummary } from './LibraryImpact';
 
 const restyle = (id: string, px: number): MissingPiece => ({ id, kind: 'variant', title: 'Card: restyle', summary: 'Card restyled.', name: 'card', component: 'Card', values: [{ category: 'spacing', property: 'padding', value: `${px}px`, resolved: `${px}px` }], where: [], restyle: { selector: '.x' } });
 const timeline: MissingPiece = { id: 'component-timeline', kind: 'component', title: 'New component: Timeline', summary: 'Built in this screen.', name: 'Timeline', component: 'Timeline', values: [], where: [] };
@@ -135,5 +135,26 @@ describe('two reviews on the library block', () => {
     expect(screen.getByRole('heading', { name: 'Nothing new for the library' })).toBeInTheDocument();
     expect(screen.getByText("Sofia's screen uses Card, as it is in the library.")).toBeInTheDocument();
     expect(screen.queryByText(/Dana|decides what the library keeps|Nothing to decide/)).toBeNull();
+  });
+});
+
+describe('the library summary on the exploration page (two reviews, board F)', () => {
+  const links = { href: '/studio/library-review/?from=acme%2Fprints-design%231&view=list', decidedHref: '/studio/library-review/?from=acme%2Fprints-design%231&status=decided&view=list', pieceHref: (r: { id: string }) => `/studio/library-review/?piece=${r.id}` };
+
+  it('counts, names the open pieces as links to Library review and decides nothing on the page', async () => {
+    const view = libraryImpactView({ ...base, body, lead: 'you', canDecide: true, libraryHat: true, conflicts: libraryConflicts(sofia, [leo]) });
+    if (view.state !== 'rows') throw new Error(view.state);
+    const { container } = render(createElement(LibrarySummary, { view, designer: 'Sofia', links }));
+    expect(screen.getByRole('heading', { name: 'What this changes in the library' })).toBeInTheDocument();
+    expect(screen.getByText('2 to decide')).toBeInTheDocument();
+    const rows = within(screen.getByRole('list', { name: 'Pieces that wait' })).getAllByRole('link');
+    expect(rows).toHaveLength(2);
+    // Ways to choose from first.
+    expect(rows[0]).toHaveTextContent('Card');
+    expect(rows[1]).toHaveAttribute('href', '/studio/library-review/?piece=component-timeline');
+    expect(screen.getByRole('link', { name: /Decide in Library review/ })).toHaveAttribute('href', links.href);
+    // No decision on the page: no checkbox, no button.
+    expect(container.querySelectorAll('input, button')).toHaveLength(0);
+    await expectNoAxeViolations(container);
   });
 });

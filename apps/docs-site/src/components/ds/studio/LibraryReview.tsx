@@ -11,7 +11,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarGroup, Badge, Button, Card, CardBody, Checkbox, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Banner, Pagination, Popover, PopoverContent, PopoverTrigger, Progress, SegmentedControl, Skeleton, Tag, ToastProvider, Tooltip, useToast, VisuallyHidden } from '@bridge-ds/react';
-import { ArrowRight, BookOpen, ChevronRight, Ellipsis, Info } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, CircleCheck, Ellipsis, Info, X } from 'lucide-react';
 import { FilterRow, MultiFilter } from './ListFilters';
 import { siteIcon } from '../../../brand/site-icons';
 import ButtonLink from '../ButtonLink';
@@ -45,6 +45,7 @@ import {
   decidedTag,
   designerBanner,
   emptyLine,
+  explorationScope,
   filterChoices,
   filterValue,
   groupPieces,
@@ -1347,6 +1348,38 @@ const setAddress = (search: string) => {
   history.replaceState(history.state, '', url);
 };
 
+/**
+ * Library review from an exploration's page (?from=, board F of 2026-11-25): the way back to it first, then, once its
+ * last piece is decided, one line that says so and sends back to the exploration, where its design review is. Never a
+ * redirect: the lead may want to read what they decided.
+ */
+function ScopeHead({ scope }: { scope: NonNullable<ReturnType<typeof explorationScope>> }) {
+  const name = scope.exploration.name;
+  return (
+    <div className="lr-scope">
+      {scope.back && (
+        <Link className="lr-scope-back" href={scope.back}>
+          <Icon icon={ArrowLeft} size="sm" />
+          Back to {name}
+        </Link>
+      )}
+      {scope.total > 0 && scope.left === 0 && (
+        <div className="lr-scope-done" role="status">
+          <Icon icon={CircleCheck} />
+          <p className="lr-scope-done-text">
+            <strong>{`All ${scope.total} ${scope.total === 1 ? 'piece' : 'pieces'} from ${name} are decided.`}</strong> The design review of the screen is on the exploration.
+          </p>
+          {scope.back && (
+            <ButtonLink href={scope.back} variant="primary" size="md">
+              Back to {name}
+            </ButtonLink>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** The address of a piece's Who gets it page: this page with ?reach=<piece>. */
 const reachHref = (key: string) => {
   if (typeof location === 'undefined') return `?reach=${encodeURIComponent(key)}`;
@@ -1461,8 +1494,12 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   // Waiting (the default): the library decisions only, said so, one count with the list and the badge (lib/library-queue):
   // "12 library decisions wait for you, as design system owner." and where design reviews are. Decided: the tally.
   const tallyText = useMemo(() => {
-    if (!data || data.loading || data.failed || !data.viewer.reviews) return null;
+    if (!data || data.loading || data.failed) return null;
     const f = params?.filters ?? { status: ['waiting'], asked: [], product: [] };
+    // Filtered on one exploration (its page's "Decide in Library review"): its pieces, for everyone.
+    const from = f.from?.[0] ? explorationScope(withLocal(data.pieces ?? [], local), f.from[0], { reviews: data.viewer.reviews }) : null;
+    if (from) return { strong: from.strong, rest: from.rest };
+    if (!data.viewer.reviews) return null;
     const decidedView = f.status.length === 1 && f.status[0] === 'decided';
     if (!decidedView) return libraryQueueSubtitle(data.pieces ?? [], data.viewer, local);
     const all = withLocal(data.pieces ?? [], local);
@@ -1693,7 +1730,10 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
   const onlyWaiting = filters.status.length === 1 && filters.status[0] === 'waiting';
   const nothingWaits = !data.loading && onlyWaiting && !(v.reviews ? waitingAll : waitingAll.filter((p) => p.mine)).length;
   const defaultAsked = v.reviews ? !filters.asked.length : filters.asked.length === 1 && filters.asked[0] === YOU;
-  const filtered = !onlyWaiting || !defaultAsked || filters.product.length > 0;
+  const fromKey = filters.from?.[0] ?? null;
+  const scope = fromKey ? explorationScope(pieces, fromKey, { reviews: v.reviews }) : null;
+  const filtered = !onlyWaiting || !defaultAsked || filters.product.length > 0 || Boolean(fromKey);
+  const unscope = () => update({ ...filters, from: [] });
   const banner = designerBanner(data.lead);
   const empty = emptyLine(decidedAll, v, data.lead);
   const sel = pieces.filter((p) => selected.has(p.key));
@@ -1755,7 +1795,14 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
         </section>
       ) : (
         <>
+          {scope && <ScopeHead scope={scope} />}
           <FilterRow className="lr-bar-row">
+            {fromKey && (
+              // The exploration filter, at the height of the others: one click shows every piece again.
+              <Button variant="secondary" size="md" className="lr-from" iconEnd={X} onClick={unscope} aria-label={`Remove the filter: from ${scope?.exploration.name ?? 'one exploration'}`}>
+                <span className="lr-from-k">From</span> {scope?.exploration.name ?? 'one exploration'}
+              </Button>
+            )}
             <FilterMenu name="Status" kind="status" picked={filters.status} choices={STATUS_CHOICES} count={(s) => countWith({ ...filters, status: [s as ReviewFilters['status'][number]] })} onChange={(s) => update({ ...filters, status: s as ReviewFilters['status'] })} />
             <FilterMenu name="Asked by" kind="asked" picked={filters.asked} choices={choices.asked} count={(a) => countWith({ ...filters, asked: [a] })} onChange={(a) => update({ ...filters, asked: a })} />
             <FilterMenu name="Product" kind="product" picked={filters.product} choices={choices.product} count={(pr) => countWith({ ...filters, product: [pr] })} onChange={(pr) => update({ ...filters, product: pr })} />
@@ -1773,6 +1820,13 @@ export function LibraryReviewView({ load, send, comment, ask, demo, openDemo, li
           {/* Until every read is in, the list holds its place: groups never land one by one above what is shown. */}
           {data.loading ? (
             <Skeleton variant="rect" className="lr-skel" />
+          ) : !shown.length && scope ? (
+            <p className="lr-none">
+              {scope.left ? 'Nothing here matches these filters.' : 'Nothing waits from this exploration.'}{' '}
+              <Button variant="link" onClick={unscope}>
+                Show every piece
+              </Button>
+            </p>
           ) : !shown.length ? (
             <p className="lr-none">
               Nothing here matches these filters.{' '}

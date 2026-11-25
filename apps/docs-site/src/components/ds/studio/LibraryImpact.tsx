@@ -8,8 +8,8 @@
 // Nothing to change is the best outcome: a Field Guide moment, never a bare line. View model:
 // lib/library-impact-view.ts; data and writes: scripts/library-impact.ts. Styles: styles/library-impact.css.
 import { useEffect, useId, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
-import { ArrowRight, Check, Ellipsis, TriangleAlert } from 'lucide-react';
-import { Accordion, AccordionItem, Avatar, AvatarGroup, Badge, Button, ButtonGroup, Card, Checkbox, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Skeleton, Textarea, Tooltip, VisuallyHidden } from '@bridge-ds/react';
+import { ArrowRight, Check, ChevronRight, Ellipsis, TriangleAlert } from 'lucide-react';
+import { Accordion, AccordionItem, Avatar, AvatarGroup, Badge, Button, ButtonGroup, Card, Checkbox, Dialog, DialogClose, DialogContent, Icon, IconButton, Input, Link, Menu, MenuContent, MenuItem, MenuTrigger, Progress, Skeleton, Textarea, Tooltip, VisuallyHidden } from '@bridge-ds/react';
 import { Drawing } from './Drawing';
 import { Who } from './faces';
 import { People } from './People';
@@ -19,6 +19,8 @@ import { nameFace } from '../../../lib/people';
 import { statusTagClass } from '../../../lib/status-tag';
 import { possessiveOf, stagedPieces } from '../../../lib/exploration-layout';
 import { SEP } from '../../../lib/sep';
+import { librarySummary } from '../../../lib/library-summary';
+import ButtonLink from '../ButtonLink';
 
 /**
  * The lead's choice on each new library piece, on the exploration page (staged there: Send to the developers applies
@@ -798,5 +800,95 @@ function AskDialog(p: { open: boolean; onOpenChange: (o: boolean) => void; title
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Where the exploration page's summary sends: Library review filtered on this exploration, and one piece in it. */
+export interface LibrarySummaryLinks {
+  /** Library review, filtered on this exploration (?from=). */
+  href: string;
+  /** The same, with what was decided (?status=decided). */
+  decidedHref: string;
+  /** One piece in Library review (One by one on it). */
+  pieceHref: (row: ImpactRowView, conflict: boolean) => string | null;
+}
+
+/**
+ * The exploration page's library section in two reviews (board F of 2026-11-25): the count, one sentence, the three
+ * open pieces that need the most thought, and one secondary button to Library review filtered on this exploration.
+ * Nothing is decided here: Library review holds the List, the Map and the compare, and the page's one primary stays the
+ * design review's Looks right. Once every piece is decided, one sentence says what the library took. Coming back from
+ * Library review (#xp-library), the page opens on this section.
+ */
+export function LibrarySummary({ view, designer, links, headingLevel = 2 }: { view: Extract<LibraryImpactView, { state: 'rows' }>; designer: string; links: LibrarySummaryLinks; headingLevel?: 2 | 3 }) {
+  const id = useId();
+  const H = headingLevel === 2 ? 'h2' : 'h3';
+  const RowH = headingLevel === 2 ? 'h3' : 'h4';
+  const s = librarySummary(view, { designer, pieceHref: links.pieceHref });
+  useEffect(() => {
+    if (location.hash !== '#xp-library') return;
+    document.getElementById('xp-library')?.scrollIntoView({ block: 'start' });
+  }, []);
+  return (
+    <section className="li-section li-sum" aria-labelledby={`${id}-h`}>
+      <header className="li-head">
+        <H className="li-title" id={`${id}-h`}>
+          What this changes in the library
+        </H>
+        <span className="li-sum-progress">
+          <span className="li-sum-tally">{s.count}</span>
+          <Progress value={s.decided} max={Math.max(s.total, 1)} size="sm" className="li-sum-bar" aria-label={s.count} />
+        </span>
+      </header>
+      {s.sentence && <p className="li-sum-line">{s.sentence}</p>}
+      {s.rows.length > 0 && (
+        <ul className="li-sum-rows" aria-label="Pieces that wait">
+          {s.rows.map((r) => (
+            <li key={r.id}>
+              {/* bridge-audit-ignore-next-line: the whole piece row (its name, what changes, its tag) is one target that opens the piece in Library review, like the Library review rows; the DS has no row link and Link would cut it to one label */}
+              <a className="li-sum-row" href={r.href ?? links.href}>
+                <span className="li-tile" aria-hidden="true">
+                  <Icon icon={siteIcon('diamonds')} size="sm" />
+                </span>
+                <span className="li-sum-text">
+                  <RowH className="li-sum-name">{r.name}</RowH>
+                  <span className="li-sum-what">{r.what}</span>
+                </span>
+                {r.tag && (
+                  <Badge tone={r.tag.tone} size="md" className={statusTagClass(r.tag.tone)}>
+                    {r.tag.label}
+                  </Badge>
+                )}
+                <Icon icon={ChevronRight} size="sm" className="li-sum-go" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {s.cta && (
+        <div className="li-sum-foot">
+          {s.more && <span className="li-muted">{s.more}</span>}
+          {/* A lone action fills its bar (Fitts); beside "and 17 more" it sits at the end. */}
+          <ButtonLink href={links.href} variant="secondary" iconEnd={ArrowRight} fullWidth={!s.more}>
+            {s.cta}
+          </ButtonLink>
+        </div>
+      )}
+      {s.done && (
+        <p className="li-sum-done">
+          <Badge tone="success" size="md" className={statusTagClass('success')}>
+            All decided
+          </Badge>
+          <span>{s.done}</span>
+          <Link href={links.decidedHref}>See the decisions</Link>
+        </p>
+      )}
+      {s.uses.length > 0 && (
+        <p className="li-foot">
+          <Icon icon={Check} size="sm" className="li-ok" />
+          <span>Everything else comes from the library: {s.uses.join(', ')}.</span>
+        </p>
+      )}
+    </section>
   );
 }

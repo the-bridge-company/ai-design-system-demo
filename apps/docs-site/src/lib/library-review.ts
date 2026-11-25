@@ -772,24 +772,29 @@ export const yourWaitingPieces = (pieces: readonly ReviewPiece[], v: Pick<Viewer
  * mixing them with people made the menu hard to read): You first, then each other person by name. Product: each
  * product with a piece.
  */
-export function filterChoices(pieces: readonly ReviewPiece[], viewerName: string | null = null): { asked: FilterChoice[]; product: FilterChoice[] } {
+export function filterChoices(pieces: readonly ReviewPiece[], viewerName: string | null = null): { asked: FilterChoice[]; exploration: FilterChoice[]; product: FilterChoice[] } {
   const people = new Map<string, string>();
   const product = new Map<string, string>();
+  const exploration = new Map<string, string>();
   const self = viewerName ? personKey(viewerName) : null;
   for (const p of pieces) {
     for (const n of peopleOf(p)) if (personKey(n) !== self) people.set(personKey(n), n);
     product.set(productKeyOf(p), p.asked?.product ?? 'Library');
+    // Every exploration a piece comes from, as the Exploration column and ?from= read them (explorationKeysOf).
+    for (const [key, name] of [[p.asked?.key, p.asked?.name], ...(p.also ?? []).map((a) => [a.key, a.name]), ...(p.conflict?.ways ?? []).map((w) => [w.key, w.exploration])])
+      if (key && name) exploration.set(key.toLowerCase(), name);
   }
   const byLabel = (a: FilterChoice, b: FilterChoice) => a.label.localeCompare(b.label);
   return {
     asked: [{ value: YOU, label: 'You' }, ...[...people].map(([value, label]) => ({ value, label })).sort(byLabel)],
+    exploration: [...exploration].map(([value, label]) => ({ value, label })).sort(byLabel),
     product: [...product].map(([value, label]) => ({ value, label })).sort((a, b) => (a.value === LIBRARY_PRODUCT ? 1 : b.value === LIBRARY_PRODUCT ? -1 : byLabel(a, b))),
   };
 }
 
 /** What a filter reads after its name: its all word ("Any", "Anyone", "All products"), "You", or "Leo +1". */
-export function filterValue(kind: 'status' | 'asked' | 'product', picked: readonly string[], choices: readonly FilterChoice[]): string {
-  return filterSummary(choices, picked, kind === 'status' ? 'Any' : kind === 'asked' ? 'Anyone' : 'All products');
+export function filterValue(kind: 'status' | 'asked' | 'exploration' | 'product', picked: readonly string[], choices: readonly FilterChoice[]): string {
+  return filterSummary(choices, picked, kind === 'status' ? 'Any' : kind === 'asked' ? 'Anyone' : kind === 'exploration' ? 'All explorations' : 'All products');
 }
 
 export const STATUS_CHOICES: FilterChoice[] = [

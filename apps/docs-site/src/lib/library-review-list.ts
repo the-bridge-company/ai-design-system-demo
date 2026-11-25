@@ -90,7 +90,7 @@ export function shownColumns(o: { state: boolean; next: boolean; action: boolean
 /**
  * The List's grid, per chapter card, in three widths (owner, 2026-11-12: one kind of info per column, sensible widths,
  * the title column takes the rest, the least important column goes first when room runs out):
- *   wide:   [box] Today › After | Piece | Asked by | From | Who gets it | [State] | [Next] | [action]
+ *   wide:   [box] Today › After | Piece | Asked by | Exploration | Product | Who gets it | [Waiting or State] | [Next] | [action]
  *   mid:    Who gets it folds away (the chapter's head still says what it reaches; One by one gives the count);
  *   narrow: Today › After folds away too. On a phone the row stacks (styles/library-review.css).
  * Asked by is a face and a first name, so a fixed width; it widens when a row names several people (People.tsx:
@@ -103,7 +103,7 @@ export interface ListGrid {
   narrow: string;
 }
 
-export function listGrid(o: { box: boolean; askedMore: boolean; state: 'none' | 'tag' | 'words'; next: boolean; action: boolean }): ListGrid {
+export function listGrid(o: { box: boolean; askedMore: boolean; state: 'none' | 'age' | 'tag' | 'words'; next: boolean; action: boolean }): ListGrid {
   // Piece and From share the rest evenly at every width (owner, 2026-11-13: Piece on at most two lines, From's
   // exploration on one line): when the room runs out, a column folds (styles/library-review.css), never a word.
   const build = (reach: boolean, thumb: boolean) =>
@@ -112,11 +112,15 @@ export function listGrid(o: { box: boolean; askedMore: boolean; state: 'none' | 
       thumb ? 'var(--size-40)' : null,
       'minmax(var(--size-40), 1fr)',
       o.askedMore ? 'var(--size-40)' : 'var(--size-20)',
-      'minmax(var(--size-40), 1fr)',
+      // Exploration: a tag, shortened with an ellipsis (its full name on hover), so it can start narrower than Piece.
+      'minmax(calc(var(--size-20) + var(--size-12)), 1fr)',
+      // Product: its tag and "+N" (owner, 2026-11-25: the product its own column, in tags, next to the exploration).
+      'calc(var(--size-20) + var(--size-8))',
       reach ? 'calc(var(--size-20) + var(--space-2))' : null,
       // Fixed widths where content varies, so every row lines up with its header row.
       // A tag column fits the longest age tag whole ("Waiting 22 days"): a tag never shrinks below its words.
-      o.state === 'tag' ? 'calc(var(--size-20) + var(--size-12))' : o.state === 'words' ? 'var(--size-40)' : null,
+      // Waiting: the days alone ("13 days"), under a header that says Waiting.
+      o.state === 'age' ? 'var(--size-20)' : o.state === 'tag' ? 'calc(var(--size-20) + var(--size-12))' : o.state === 'words' ? 'var(--size-40)' : null,
       o.next ? 'minmax(0, 0.5fr)' : null,
       o.action ? 'var(--size-20)' : null,
     ]

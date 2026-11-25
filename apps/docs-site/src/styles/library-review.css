@@ -65,10 +65,6 @@ html:has(.lr) {
   color: var(--color-text-muted);
 }
 
-.lr-from-k {
-  color: var(--color-text-muted);
-}
-
 /* --- From an exploration (?from=): the way back, then "All decided" once its last piece is (board F) --------------- */
 
 .lr-scope {
@@ -405,6 +401,20 @@ a.lr-ask {
 /* The age tag on its own line under who asked, the full width of the row's text. */
 .lr-side-age {
   display: flex;
+}
+
+/* Under the Waiting header the tag says the days alone, capitalised ("16 days", "Today"); a stacked row has no
+   header, so the word comes back in front ("Waiting 16 days"). */
+.lr-age-k {
+  display: none;
+}
+
+.lr-age-days {
+  display: inline-block;
+}
+
+.lr-age-k + .lr-age-days::first-letter {
+  text-transform: uppercase;
 }
 
 /* An age tag hugs its words: it never shrinks below them ("Waiting 22 days" whole, in its pill). */
@@ -933,58 +943,39 @@ a.lr-ask {
 /* Asked by is the shared People line (styles/people.css, .lr-asked on it): every face and name up to three people;
    the names wrap on two lines in the cell rather than hide anyone behind "+1". */
 
-.lr-from {
-  display: grid;
-  gap: var(--space-0-5);
+/* Exploration and Product: tags only (owner, 2026-11-25), the first one shortened with an ellipsis when the column is
+   narrow (its full name on hover), then "+N". "Asked directly" is muted text in the same place. */
+.lr-row-product {
+  display: flex;
   min-width: 0;
 }
 
-.lr-from-line {
+.lr-tags {
   display: flex;
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
 }
 
-.lr-from-name {
-  display: -webkit-box;
+.lr-tags .lr-tag-name {
+  display: block;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
-  color: var(--color-text-default);
-  font-size: var(--typography-ui-size);
-  line-height: var(--typography-ui-line-height);
-  text-decoration-line: none;
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-}
-
-.lr-from-name.lr-muted {
-  color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
-}
-
-/* The exploration links to it: plain until hovered, like the piece's name. */
-.lr-from-line a.lr-from-name {
-  text-decoration-line: none;
-}
-
-.lr-from-line a.lr-from-name:hover {
-  text-decoration-line: underline;
-}
-
-.lr-from-product {
-  overflow: hidden;
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.lr-tags .lr-tag-link {
+  display: flex;
+  min-width: 0;
+  text-decoration-line: none;
+}
+
 /* "+N" after the exploration: a 24px target that opens every exploration that asked, no taller than the line. */
-.lr-from-line .lr-from-more {
+.lr-tags .lr-tag-more {
   flex: none;
   min-width: var(--size-6);
   min-height: var(--size-6);
@@ -1049,10 +1040,10 @@ a.lr-ask {
 
 /* --- List columns fold by the room of the list (wider than a phone) ----------------------------------------------
    One rule for every chapter, so the cards show the same columns at the same x, down the page: Who gets it folds first
-   (the Map and One by one still say it), then Today › After. The widths keep Piece on at most two lines and From's
-   exploration on one line, uncut; when even the narrow columns would squeeze a word, the rows stack as on a phone. */
+   (the Map and One by one still say it), then Today › After. The widths keep Piece on at most two lines and the
+   Exploration and Product tags on one line (worst case, Asked by naming several people); when even the narrow columns would squeeze a word, the rows stack as on a phone. */
 @media (min-width: 761px) {
-  @container lr-list (max-width: 1119.98px) {
+  @container lr-list (max-width: 1179.98px) {
     .lr-list :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-mid);
     }
@@ -1062,7 +1053,7 @@ a.lr-ask {
     }
   }
 
-  @container lr-list (max-width: 1009.98px) {
+  @container lr-list (max-width: 1069.98px) {
     .lr-list :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-narrow);
     }
@@ -1073,7 +1064,7 @@ a.lr-ask {
   }
 
   /* Too narrow for the columns: the rows stack as on a phone (the same rules as the Phones section below). */
-  @container lr-list (max-width: 879.98px) {
+  @container lr-list (max-width: 889.98px) {
     .lr-chapter-cols {
       display: none;
     }
@@ -1093,19 +1084,14 @@ a.lr-ask {
 
     .lr-row-ask,
     .lr-row-from,
+    .lr-row-product,
     .lr-row-state,
     .lr-row-next {
       grid-column: 1 / -1;
     }
 
-    .lr-list.is-lead :is(.lr-row-ask, .lr-row-from, .lr-row-state, .lr-row-next) {
+    .lr-list.is-lead :is(.lr-row-ask, .lr-row-from, .lr-row-product, .lr-row-state, .lr-row-next) {
       grid-column: 2 / -1;
-    }
-
-    .lr-row-from .lr-from {
-      display: flex;
-      align-items: baseline;
-      gap: var(--space-2);
     }
 
     .lr-row .lr-col-box,
@@ -1122,9 +1108,18 @@ a.lr-ask {
       grid-column: -2;
     }
 
+    .lr-age-k {
+      display: inline;
+    }
+
+    .lr-age-k + .lr-age-days::first-letter {
+      text-transform: none;
+    }
+
     .lr-row-state:empty,
     .lr-row-next:empty,
-    .lr-row-ask:empty {
+    .lr-row-ask:empty,
+    .lr-row-product:empty {
       display: none;
     }
   }
@@ -1133,6 +1128,14 @@ a.lr-ask {
 /* --- Phones -------------------------------------------------------------------------------------------------------- */
 
 @media (max-width: 760px) {
+  .lr-age-k {
+    display: inline;
+  }
+
+  .lr-age-k + .lr-age-days::first-letter {
+    text-transform: none;
+  }
+
   .lr-one {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1239,20 +1242,14 @@ a.lr-ask {
   /* Under the piece, in the same order as the columns: who asked, where from, then the state and who acts next. */
   .lr-row-ask,
   .lr-row-from,
+  .lr-row-product,
   .lr-row-state,
   .lr-row-next {
     grid-column: 1 / -1;
   }
 
-  .lr-list.is-lead :is(.lr-row-ask, .lr-row-from, .lr-row-state, .lr-row-next) {
+  .lr-list.is-lead :is(.lr-row-ask, .lr-row-from, .lr-row-product, .lr-row-state, .lr-row-next) {
     grid-column: 2 / -1;
-  }
-
-  /* From on one line on a phone: the exploration, then its product. */
-  .lr-row-from .lr-from {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
   }
 
   .lr-row .lr-col-box,

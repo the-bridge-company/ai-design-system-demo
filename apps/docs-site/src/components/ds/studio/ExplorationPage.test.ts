@@ -587,7 +587,8 @@ describe('ExplorationPage, after Done exploring (Ready to build, Being built, Sh
     // The celebration: where it lives now, and since when, with a Field Guide drawing.
     const zone = screen.getByRole('region', { name: 'Live in Admin demo' });
     expect(within(zone).getByText('Since Nov 10, for everyone who uses it.')).toBeTruthy();
-    expect(zone.querySelector('svg.ill')).toBeTruthy();
+    // No Field Guide drawing in the turn zone for now (owner, 2026-11-25).
+    expect(zone.querySelector('svg.ill')).toBeNull();
     expect(screen.getByRole('link', { name: /Open the preview/ })).toBeTruthy();
   });
 

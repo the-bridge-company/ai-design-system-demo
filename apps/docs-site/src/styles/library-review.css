@@ -242,12 +242,14 @@ a.lr-ask {
 }
 
 /* A group under its family: plain sans, semibold, its count quiet. */
+/* No space of its own above: the group's padding is the one gap under the family heading, the same whether a label
+   (Colors) or a card (Docs) comes first. */
 .lr-side-label {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   margin: 0;
-  padding: var(--space-3) var(--space-4) var(--space-1);
+  padding: 0 var(--space-4) var(--space-1);
   color: var(--color-text-default);
   font-size: var(--typography-ui-size);
   font-weight: var(--font-weight-semibold);
@@ -727,6 +729,12 @@ a.lr-ask {
   border-radius: var(--radius-container);
   background-color: var(--color-surface-default);
   overflow: clip;
+}
+
+.lr-col-thumb-words {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 .lr-chapter-cols,

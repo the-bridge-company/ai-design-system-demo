@@ -23,11 +23,6 @@
   background-color: var(--color-bg-zone);
 }
 
-.ex-col-num {
-  display: inline-block;
-  margin-inline-start: var(--space-1);
-}
-
 /* Review: always at the end of a waiting row, as on the Home's rows (the same row, the same action); on a waiting card
    (grid, board) on hover or keyboard focus, always on touch (a 44px target there). */
 .ex-review {
@@ -122,6 +117,13 @@
   padding: var(--space-3);
   border-radius: var(--radius-container);
   background-color: var(--color-bg-subtle);
+}
+
+/* The column count on the grey column: the count Badge's neutral fill is the column's own grey (neutral 100 in light),
+   so it takes the page color instead, one quiet step off the column in every theme (white, neutral 950 in dark,
+   neutral 50 in ocean), its border unchanged. */
+.ex-col-h .count-tag {
+  background-color: var(--color-bg-default);
 }
 
 /* The heading stays on one line ("Shipped (30 days)" and its count): the columns share one width. */

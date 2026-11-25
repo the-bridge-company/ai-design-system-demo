@@ -7,7 +7,6 @@
 import { useState, type ReactNode } from 'react';
 import { Check, Code2, ExternalLink, GitBranch } from 'lucide-react';
 import { Avatar, Button, CodeBlock, Icon, Input, Link, Popover, PopoverContent, PopoverTrigger, SegmentedControl, Stepper, Tab, Tabs, TabsList, TabsPanel, Tag } from '@bridge-ds/react';
-import { Drawing } from './Drawing';
 import { Who } from './faces';
 import type { IllustrationName } from '../../../brand/illustrations';
 import { CODE_WORDS, earlierLine, foldTimeline, isTeamActor, SCREEN_WORDS, type TimelineItem, type TurnStep } from '../../../lib/exploration-layout';
@@ -117,10 +116,10 @@ export function ScreenStage({ name, nameHidden = false, about = null, sub, singl
 
 /**
  * The one Harbor zone, only when the viewer acts now: eyebrow and the question as title, tight together as one heading,
- * with the Field Guide drawing at the top of their row (its top on the eyebrow's), the context, an open question as an
- * avatar quote, then the buttons last on one row (a lone one fills it).
+ * the context, an open question as an avatar quote, then the buttons last on one row (a lone one fills it).
+ * No Field Guide drawing for now (owner, 2026-11-25): `drawing` stays named by each caller so it can come back.
  */
-export function TurnZone({ eyebrow, title, drawing, children, quote, actions, id = 'xp-turn-h' }: { eyebrow: string; title: string; drawing: IllustrationName; children?: ReactNode; quote?: ReactNode; actions?: ReactNode; id?: string }) {
+export function TurnZone({ eyebrow, title, children, quote, actions, id = 'xp-turn-h' }: { eyebrow: string; title: string; drawing: IllustrationName; children?: ReactNode; quote?: ReactNode; actions?: ReactNode; id?: string }) {
   return (
     <section className="xp-turn zone" aria-labelledby={id}>
       <div className="xp-turn-head">
@@ -130,7 +129,6 @@ export function TurnZone({ eyebrow, title, drawing, children, quote, actions, id
             {title}
           </h2>
         </div>
-        <Drawing name={drawing} width={80} className="xp-turn-art" />
       </div>
       {children && <div className="xp-turn-body">{children}</div>}
       {quote && <div className="xp-turn-quote">{quote}</div>}

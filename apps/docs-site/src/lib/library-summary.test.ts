@@ -37,7 +37,7 @@ describe('the summary of the library section on the exploration page', () => {
   it('counts what waits, says what the pieces are and sends to Library review, nothing decided yet', () => {
     const s = librarySummary(view([row('Timeline', 'New component', 'needs-lead'), row('Space', 'Token change', 'needs-lead', { label: 'Change', tone: 'neutral' }), row('Card', 'Change to', 'conflict', { label: 'New option', tone: 'info' })], ['Card']), { designer: 'Sofia' });
     expect(s.count).toBe('3 to decide');
-    expect(s.sentence).toBe("Sofia's screen changes 3 pieces the library does not have: 1 with ways to choose from, 1 new and 1 change.");
+    expect(s.sentence).toBe("Sofia's screen asks the library to decide on 3 pieces: 1 with ways to choose from, 1 new component and 1 change.");
     expect(s.cta).toBe('Decide in Library review');
     expect(s.done).toBeNull();
     expect(s.uses).toEqual(['Badge']);
@@ -58,7 +58,7 @@ describe('the summary of the library section on the exploration page', () => {
     expect(s.rows[1]!.href).toBe('?piece=p:b');
     expect(s.more).toBe('and 2 more');
     expect(s.count).toBe('1 of 6 decided');
-    expect(s.sentence).toBe('5 left: 1 with ways to choose from, 2 new and 2 changes.');
+    expect(s.sentence).toBe('5 left: 1 with ways to choose from, 1 new component and 3 new pieces.');
     expect(s.cta).toBe('Continue in Library review');
   });
 
@@ -88,6 +88,6 @@ describe('the summary of the library section on the exploration page', () => {
     const s = librarySummary(v, { designer: 'Sofia' });
     expect(s.count).toBe('1 to decide');
     expect(s.rows).toEqual([{ id: 'component-timeline', name: 'Timeline', what: 'Built in this screen. The library has nothing like it yet.', tag: { label: 'New', tone: 'info' }, href: null }]);
-    expect(s.sentence).toBe("Sofia's screen changes 1 piece the library does not have: 1 new.");
+    expect(s.sentence).toBe("Sofia's screen asks the library to decide on 1 piece: 1 new component.");
   });
 });

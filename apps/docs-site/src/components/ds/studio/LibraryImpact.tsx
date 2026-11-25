@@ -832,7 +832,7 @@ export function LibrarySummary({ view, designer, links, headingLevel = 2 }: { vi
   return (
     <section className="li-section li-sum" aria-labelledby={`${id}-h`}>
       <header className="li-head">
-        <H className="li-title" id={`${id}-h`}>
+        <H className="li-sum-title" id={`${id}-h`}>
           What this changes in the library
         </H>
         <span className="li-sum-progress">
@@ -881,12 +881,6 @@ export function LibrarySummary({ view, designer, links, headingLevel = 2 }: { vi
           </Badge>
           <span>{s.done}</span>
           <Link href={links.decidedHref}>See the decisions</Link>
-        </p>
-      )}
-      {s.uses.length > 0 && (
-        <p className="li-foot">
-          <Icon icon={Check} size="sm" className="li-ok" />
-          <span>Everything else comes from the library: {s.uses.join(', ')}.</span>
         </p>
       )}
     </section>

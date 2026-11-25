@@ -846,8 +846,8 @@ function OneByOne({ groups, all, current, seen, onPick, detail, mark }: { groups
       <nav ref={sideRef} className={`lr-side${listOpen ? ' is-open' : ''}`} id="lr-side" aria-label="Pieces">
         <div className="lr-side-head">
           <p className="lr-seen">
+            {/* The decided count only: how many were looked at was noise (owner, 2026-11-25). */}
             <strong>{progress.headline}</strong>
-            {progress.seenNote && <span className="lr-muted">{progress.seenNote}</span>}
           </p>
           <Progress value={progress.value} size="sm" tone={progress.done ? 'success' : 'signal'} aria-label={progress.headline} />
         </div>
@@ -1255,7 +1255,13 @@ function ListView({ groups, thumbs, viewer, tech, secondLead, decided, selected,
                   </span>
                 )}
                 <span role="columnheader" className="lr-col-thumb">
-                  Today › After
+                  {/* A chevron icon, centred on the line, not the "›" glyph that sits on the lowercase height. */}
+                  <span className="lr-col-thumb-words">
+                    Today
+                    <Icon icon={ChevronRight} size="sm" />
+                    <VisuallyHidden>to</VisuallyHidden>
+                    After
+                  </span>
                 </span>
                 <span role="columnheader">Piece</span>
                 <span role="columnheader">Asked by</span>

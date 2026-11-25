@@ -753,6 +753,16 @@
 /* --- The exploration page's summary (two reviews, board F of 2026-11-25): count, one sentence, three rows, one way to
    Library review ----------------------------------------------------------------------------------------------------- */
 
+/* A section of the page like the build check's "Where the build differs": the h2 role, never the row size. */
+.li-sum-title {
+  margin: 0;
+  font-family: var(--typography-h2-family);
+  font-size: var(--typography-h2-size);
+  font-weight: var(--typography-h2-weight);
+  letter-spacing: var(--typography-h2-tracking);
+  line-height: var(--typography-h2-line-height);
+}
+
 .li-sum-progress {
   display: inline-flex;
   flex: none;

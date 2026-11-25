@@ -55,8 +55,11 @@ import { DEMO, REQUEST } from '../lib/nav';
         </h1>
         <p class="hp-lede"><span class="hp-hs">Bridge finds what your exploration added. </span><span class="hp-hs">You review it, then the code and Figma kit follow.</span></p>
         <div class="hp-go">
-          <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={DEMO}>Open the demo</ButtonLink>
-          <ButtonLink variant="link" size="lg" href={REQUEST} data-session-cta=""><span data-session-cta-label>Request access</span></ButtonLink>
+          {/* Signed out: the demo, then Request access as a link. Signed in on this browser (scripts/session-cta.ts): one
+              primary, Open Studio, to their team; the demo and the request are hidden. */}
+          <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={DEMO} data-session-visitor="">Open the demo</ButtonLink>
+          <ButtonLink variant="link" size="lg" href={REQUEST} data-session-visitor="">Request access</ButtonLink>
+          <ButtonLink variant="primary" size="lg" iconEnd={ArrowRight} href={REQUEST} data-session-cta="" data-session-member="" hidden><span data-session-cta-label>Open Studio</span></ButtonLink>
         </div>
       </div>
       <div class="hp-hero-vis">

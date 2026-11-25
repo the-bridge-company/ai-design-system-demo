@@ -195,9 +195,14 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  /* Open the demo and Request access are one pair: the DS gap between buttons, not a section gap. */
-  gap: var(--space-3);
+  /* Open the demo and the Request access link: the same pair and the same gap as Founding teams (.hp-fd-cta). */
+  gap: var(--space-3) var(--space-6);
   margin-top: var(--space-10);
+}
+
+/* The signed-in and signed-out buttons swap with [hidden]; a button's own display never shows the hidden one. */
+.hp-go [hidden] {
+  display: none;
 }
 
 /* One quiet line under the pair: access opens in small groups. */

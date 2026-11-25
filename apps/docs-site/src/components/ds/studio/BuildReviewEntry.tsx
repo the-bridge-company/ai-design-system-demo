@@ -368,7 +368,8 @@ export function BuildReviewEntry({
     <section className="brl" aria-labelledby="brl-h">
       <header className="brl-head">
         <div className="brl-headtext">
-          <p className="brl-muted brl-meta">{L.measured(m.measuredAt, sizes)}</p>
+          {/* When it was measured is said once, on the build's frame above; here only when there is no frame. */}
+          {!shot && <p className="brl-muted brl-meta">{L.measured(m.measuredAt, sizes)}</p>}
           <h2 id="brl-h" className="brl-title">
             {L.title(builder, designer)}
           </h2>

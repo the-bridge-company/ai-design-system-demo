@@ -59,8 +59,6 @@ export const ACCESS_WORDS = {
   offline: 'Bridge could not send your request. Check your connection, then select Request access again.',
   failed: 'Bridge could not save your request. Try again in a minute.',
   unavailable: 'Requests are not open on this site yet. Write to hello@bridgedesignsystem.com instead.',
-  /** The landing's line under its two buttons. */
-  heroNote: 'Access opens in small groups. We reply within 2 working days.',
 } as const;
 
 export type AccessField = 'email' | 'company' | 'where' | 'fix';

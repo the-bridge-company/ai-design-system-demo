@@ -954,48 +954,77 @@ function AskedByCell({ p }: { p: ReviewPiece }) {
 }
 
 /**
+ * A tag that may be shortened with an ellipsis: its full name in the DS Tooltip, only while it is cut (a tooltip that
+ * repeats the visible words is noise), never the browser's title. Every hover in the List is this one Tooltip.
+ */
+function FullNameTag({ name }: { name: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [cut, setCut] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const check = () => setCut(el.scrollWidth > el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [name]);
+  return (
+    <Tooltip content={name} disabled={!cut}>
+      <Badge ref={ref} tone="neutral" size="sm" className="lr-tag-name" tabIndex={cut ? 0 : undefined}>
+        {name}
+      </Badge>
+    </Tooltip>
+  );
+}
+
+/**
+ * "+N" after the first tag, the same in Exploration and Product (owner, 2026-11-25: one behaviour for both): a 24px
+ * button that opens every exploration that asked, grouped by product, so the Product "+1" says which exploration
+ * brings which product.
+ */
+function MoreAskers({ n, what, p, list }: { n: number; what: 'explorations' | 'products'; p: ReviewPiece; list: AskedBy[] }) {
+  const more = moreTag(n, what);
+  const products = new Set(list.map((a) => a.product).filter(Boolean)).size;
+  return (
+    <Popover>
+      <PopoverTrigger render={<Button variant="ghost" size="sm" className="lr-tag-more" aria-label={`${more.label} for ${p.title}`} />}>
+        <Badge tone="neutral" size="sm" className="lr-more-tag">
+          {more.tag}
+        </Badge>
+      </PopoverTrigger>
+      <PopoverContent title={what === 'products' ? `${products} products asked for it` : `${list.length} explorations asked for it`} align="start" className="lr-askers-pop">
+        <AskersList list={list} />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
  * The List's Exploration cell (owner, 2026-11-25: one kind of info per column, tags only, never text and a tag
- * mixed): the exploration it came from as a tag that opens it (its full name on hover when the column is narrow),
- * then "+N" that opens every exploration grouped by product. A piece no exploration asked for says "Asked directly"
- * in muted text, the one cell with no tag.
+ * mixed): the exploration it came from as a tag (its full name on hover when it is cut), then "+N". A piece no
+ * exploration asked for says "Asked directly" in muted text, the one cell with no tag.
  */
 function ExplorationCell({ p }: { p: ReviewPiece }) {
   const { from } = askedColumns(p);
   if (from.kind === 'direct') return <span className="lr-tags lr-muted">{directWords(p)}</span>;
-  const a = from.first;
-  const tag = (
-    <Badge tone="neutral" size="sm" className="lr-tag-name" title={a.name}>
-      {a.name}
-    </Badge>
-  );
   return (
     <span className="lr-tags">
-      {a.href ? (
-        <Link href={a.href} variant="subtle" className="lr-tag-link" aria-label={`Open ${a.name}`}>
-          {tag}
+      {from.first.href ? (
+        <Link href={from.first.href} variant="subtle" className="lr-tag-link" aria-label={`Open ${from.first.name}`}>
+          <FullNameTag name={from.first.name} />
         </Link>
       ) : (
-        tag
+        <FullNameTag name={from.first.name} />
       )}
-      {from.more > 0 && (
-        <Popover>
-          <PopoverTrigger render={<Button variant="ghost" size="sm" className="lr-tag-more" aria-label={`${moreTag(from.more).label} asked for ${p.title}`} />}>
-            <Badge tone="neutral" size="sm" className="lr-more-tag">
-              {moreTag(from.more).tag}
-            </Badge>
-          </PopoverTrigger>
-          <PopoverContent title={`${from.all.length} explorations asked for it`} align="start" className="lr-askers-pop">
-            <AskersList list={from.all} />
-          </PopoverContent>
-        </Popover>
-      )}
+      {from.more > 0 && <MoreAskers n={from.more} what="explorations" p={p} list={from.all} />}
     </span>
   );
 }
 
 /**
- * The List's Product cell: the product of the most recent exploration as a tag, then "+N" for the others, every name
- * on hover. A lead's own change says Library, as the Product filter does.
+ * The List's Product cell: the product of the most recent exploration as a tag, then "+N", the same button as the
+ * Exploration cell's. A lead's own change says Library, as the Product filter does.
  */
 function ProductCell({ p }: { p: ReviewPiece }) {
   const { from } = askedColumns(p);
@@ -1004,16 +1033,8 @@ function ProductCell({ p }: { p: ReviewPiece }) {
   if (!list.length) return null;
   return (
     <span className="lr-tags">
-      <Badge tone="neutral" size="sm" className="lr-tag-name" title={list[0]}>
-        {list[0]}
-      </Badge>
-      {list.length > 1 && (
-        <Tooltip content={list.join(', ')}>
-          <Badge tone="neutral" size="sm" className="lr-more-tag" tabIndex={0} aria-label={`${list.length - 1} more ${list.length === 2 ? 'product' : 'products'}: ${list.slice(1).join(', ')}`}>
-            {moreTag(list.length - 1, 'products').tag}
-          </Badge>
-        </Tooltip>
-      )}
+      <FullNameTag name={list[0]!} />
+      {from.kind === 'exploration' && list.length > 1 && <MoreAskers n={list.length - 1} what="products" p={p} list={from.all} />}
     </span>
   );
 }

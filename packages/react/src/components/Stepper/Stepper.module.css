@@ -64,6 +64,9 @@
   font-weight: var(--font-weight-semibold);
   font-variant-numeric: tabular-nums;
   line-height: var(--font-line-height-none);
+  /* Centre the figure's own height, not the font's ascent and descent: with line-height alone the number sat a little
+     high or low depending on the browser's font metrics. Browsers without text-box keep the line-height centring. */
+  text-box: trim-both cap alphabetic;
 }
 
 .done .marker,

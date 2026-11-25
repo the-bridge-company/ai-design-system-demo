@@ -57,10 +57,13 @@
   background-color: var(--color-surface-default);
 }
 
+/* The screen's first view, as the exploration frames its own: a screen's ratio from the top, not the whole long page. */
 .brl-shot img {
   display: block;
   inline-size: 100%;
-  block-size: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top;
 }
 
 .brl-shot .brl-wait {

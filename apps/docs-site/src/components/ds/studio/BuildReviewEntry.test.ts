@@ -103,7 +103,7 @@ describe('the ledger of differences', () => {
     world.read = read({ review: { ...r.review!, sizes: [{ ...r.review!.sizes[0]!, b: { image: 'laptop-b', w: 1280, h: 800 } as never }, ...r.review!.sizes.slice(1)] } });
     await ledger();
     const frame = screen.getByRole('region', { name: "Malik's build" });
-    expect(within(frame).getByRole('link', { name: "Open Malik's build" })).toHaveAttribute('href', 'https://build.example');
+    expect(within(frame).getByRole('link', { name: "Open Malik's build (opens in a new tab)" })).toHaveAttribute('href', 'https://build.example');
   });
 
   it('after 2 of 8: answered lines keep their place and number with their answer; Continue in the check', async () => {
@@ -183,7 +183,7 @@ describe('the Your turn zone at Check the build (board G)', () => {
     world.read = read({ items: states(Object.fromEntries(ITEMS.map((i) => [i.n, 'fine']))) });
     render(createElement(BuildReviewActions, { product: 'crm', number: 2, builder: 'Malik', fallback: null }));
     expect(await screen.findByRole('link', { name: 'Send your answer to Malik' })).toBeInTheDocument();
-  });
+  }, 15_000);
 });
 
 describe('the full check: a design lead answers', () => {

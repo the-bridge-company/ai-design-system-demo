@@ -16,6 +16,7 @@ import { Check, ChevronDown, ChevronRight, ChevronUp, Smartphone } from "lucide-
 import { Badge, Button, Checkbox, Icon, Link, Progress } from "@bridge-ds/react";
 import ButtonLink from "../ButtonLink";
 import { Who } from "./faces";
+import { ShotLink } from "./ExplorationParts";
 import { studioHref } from "../../../lib/team-path";
 import {
   eitherLine,
@@ -324,16 +325,12 @@ export function BuildReviewEntry({
           </h2>
           <p className="brl-muted">{L.measured(m.measuredAt, sizes)}</p>
         </div>
-        {m.urls.build ? (
-          // bridge-audit-ignore-next-line: the picture is the target that opens the build, as the exploration's screen opens its preview; the DS has no image link
-          <a className="brl-shot" href={m.urls.build} target="_blank" rel="noopener" aria-label={W.openBuildOf(possessive(builder))}>
-            <Crop url={img(shot.image)} alt={L.builtBy(builder)} />
-          </a>
-        ) : (
+        {/* The exploration's own screen link (ShotLink): the scrim and "Open Malik's build" on hover and focus. */}
+        <ShotLink href={m.urls.build} label={W.openBuildOf(possessive(builder))}>
           <div className="brl-shot">
             <Crop url={img(shot.image)} alt={L.builtBy(builder)} />
           </div>
-        )}
+        </ShotLink>
       </section>
     )}
     <section className="brl" aria-labelledby="brl-h">

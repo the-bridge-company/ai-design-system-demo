@@ -71,11 +71,6 @@
   aspect-ratio: 16 / 10;
 }
 
-a.brl-shot:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
 /* Under the three differences: how many more, and the way into the check (secondary; a lone one fills its bar). */
 .brl-foot {
   display: flex;

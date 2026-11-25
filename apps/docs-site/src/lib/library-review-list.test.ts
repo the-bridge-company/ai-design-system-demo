@@ -101,15 +101,15 @@ describe('the List in blocks', () => {
     expect(tracks(g.narrow)).toHaveLength(6);
     expect(g.narrow).not.toMatch(/^var\(--size-6\) var\(--size-40\)/);
     // Piece and Exploration share the rest once the thumbnails fold; Product a fixed width for its tag and "+N".
-    expect(g.narrow).toBe('var(--size-6) minmax(var(--size-40), 1fr) var(--size-20) minmax(calc(var(--size-20) + var(--size-12)), 1fr) calc(var(--size-20) + var(--size-8)) var(--size-20)');
+    expect(g.narrow).toBe('var(--size-6) minmax(var(--size-40), 1fr) var(--size-20) minmax(calc(var(--size-20) + var(--size-12)), 1fr) calc(var(--size-20) + var(--size-12)) var(--size-20)');
     // The title column takes the rest; a row naming several people widens Asked by, a State column only when one is filled.
     expect(g.wide).toContain('minmax(var(--size-40), 1fr)');
     expect(listGrid({ box: false, askedMore: true, state: 'tag', next: false, action: false }).wide).toBe(
       // A tag column fits "Waiting 22 days" whole.
-      'var(--size-40) minmax(var(--size-40), 1fr) var(--size-40) minmax(calc(var(--size-20) + var(--size-12)), 1fr) calc(var(--size-20) + var(--size-8)) calc(var(--size-20) + var(--space-2)) calc(var(--size-20) + var(--size-12))',
+      'var(--size-40) minmax(var(--size-40), 1fr) var(--size-40) minmax(calc(var(--size-20) + var(--size-12)), 1fr) calc(var(--size-20) + var(--size-12)) calc(var(--size-20) + var(--space-2)) calc(var(--size-20) + var(--size-12))',
     );
     // Under a Waiting header the tag says the days alone ("13 days"): a narrower column.
-    expect(listGrid({ box: false, askedMore: false, state: 'age', next: false, action: false }).wide).toMatch(/calc\(var\(--size-20\) \+ var\(--size-8\)\) calc\(var\(--size-20\) \+ var\(--space-2\)\) var\(--size-20\)$/);
+    expect(listGrid({ box: false, askedMore: false, state: 'age', next: false, action: false }).wide).toMatch(/calc\(var\(--size-20\) \+ var\(--size-12\)\) calc\(var\(--size-20\) \+ var\(--space-2\)\) var\(--size-20\)$/);
   });
 });
 

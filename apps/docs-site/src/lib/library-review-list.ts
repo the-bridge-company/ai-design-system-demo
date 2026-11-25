@@ -115,7 +115,7 @@ export function listGrid(o: { box: boolean; askedMore: boolean; state: 'none' | 
       // Exploration: a tag, shortened with an ellipsis (its full name on hover), so it can start narrower than Piece.
       'minmax(calc(var(--size-20) + var(--size-12)), 1fr)',
       // Product: its tag and "+N" (owner, 2026-11-25: the product its own column, in tags, next to the exploration).
-      'calc(var(--size-20) + var(--size-8))',
+      'calc(var(--size-20) + var(--size-12))',
       reach ? 'calc(var(--size-20) + var(--space-2))' : null,
       // Fixed widths where content varies, so every row lines up with its header row.
       // A tag column fits the longest age tag whole ("Waiting 22 days"): a tag never shrinks below its words.

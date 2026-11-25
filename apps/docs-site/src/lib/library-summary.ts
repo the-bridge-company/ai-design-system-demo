@@ -47,6 +47,14 @@ const words = (xs: readonly string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs
 const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
 const possessive = (name: string) => (/s$/i.test(name) ? `${name}'` : `${name}'s`);
 
+/** A piece's kind in the summary sentence: its tag, lowercased ("new option", "token change"); a bare "New" says "new piece". */
+function tagWord(r: ImpactRowView): string {
+  const w = (r.tag?.label ?? 'change').toLowerCase();
+  return w === 'new' ? `new ${/component/i.test(r.kind) ? 'component' : 'piece'}` : w;
+}
+
+const plural = (w: string) => w.replace(/(\w+)$/, (x) => (/[sx]$/.test(x) ? `${x}es` : /y$/.test(x) ? `${x.slice(0, -1)}ies` : `${x}s`));
+
 /** How much thought a piece asks for: ways to choose from first, then something new, then a change. */
 function weight(r: ImpactRowView, conflicts: ReadonlySet<string>): number {
   if (conflicts.has(r.id)) return 0;
@@ -66,15 +74,16 @@ export function librarySummary(view: RowsView, o: { designer: string; pieceHref?
   const decided = total - open.length;
   const all = total > 0 && open.length === 0;
   const ordered = open.map((r, i) => ({ r, i })).sort((a, b) => weight(a.r, conflicts) - weight(b.r, conflicts) || a.i - b.i).map((x) => x.r);
+  // What the open pieces are, in their own tags' words ("1 new option and 1 token change"), ways to choose from first.
   const ways = open.filter((r) => conflicts.has(r.id)).length;
-  const fresh = open.filter((r) => !conflicts.has(r.id) && /^new\b/i.test(r.kind)).length;
-  const changed = open.length - ways - fresh;
-  const kinds = [ways ? `${ways} with ways to choose from` : '', fresh ? `${fresh} new` : '', changed ? n(changed, 'change') : ''].filter(Boolean);
+  const byTag = new Map<string, number>();
+  for (const r of ordered) if (!conflicts.has(r.id)) byTag.set(tagWord(r), (byTag.get(tagWord(r)) ?? 0) + 1);
+  const kinds = [ways ? `${ways} with ways to choose from` : '', ...[...byTag].map(([w, k]) => `${k} ${k === 1 ? w : plural(w)}`)].filter(Boolean);
   const sentence = all
     ? null
     : decided
       ? `${open.length} left: ${words(kinds)}.`
-      : `${possessive(o.designer)} screen changes ${n(total, 'piece')} the library does not have: ${words(kinds)}.`;
+      : `${possessive(o.designer)} screen asks the library to decide on ${n(total, 'piece')}: ${words(kinds)}.`;
   const added = pieces.filter((r) => !conflicts.has(r.id) && ['approved', 'building', 'released'].includes(r.status.key)).length;
   const chosen = pieces.filter((r) => conflicts.has(r.id) && SETTLED.has(r.status.key)).length;
   const local = pieces.filter((r) => r.status.key === 'local').length;

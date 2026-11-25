@@ -1457,14 +1457,6 @@
   text-wrap: pretty;
 }
 
-/* The drawing at 80px, its top on the eyebrow's top: wide enough to read, narrow enough to leave the question about
-   250px (two lines at most). */
-.xp-turn-art {
-  flex: none;
-  width: var(--size-20);
-  height: auto;
-}
-
 .xp-turn-body {
   display: grid;
   gap: var(--space-2);

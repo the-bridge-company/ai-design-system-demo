@@ -124,6 +124,13 @@
   background-color: var(--color-bg-subtle);
 }
 
+/* The column count on the grey column: the count Badge's neutral fill is the column's own grey (neutral 100 in light),
+   so it takes the page color instead, one quiet step off the column in every theme (white, neutral 950 in dark,
+   neutral 50 in ocean), its border unchanged. */
+.ex-col-h .count-tag {
+  background-color: var(--color-bg-default);
+}
+
 /* The heading stays on one line ("Shipped (30 days)" and its count): the columns share one width. */
 .ex-col-h {
   margin: 0;

@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your face mock</title>
+<!--
+  Desktop mock of docs/specs/avatar-customizer.md (Settings > You > Your face). Not production code.
+  Built with the real Bridge Library (the Claude Design System build that bridgedesignsystem.com serves: tokens.css,
+  components/bundle.css, components/bundle.js under window.Bridge) and the real face drawer (DiceBear Notionists 9.4.3,
+  the options of packages/react/src/avatar-illustrated). Open a state with ?state=collapsed|open|shuffled|parts|saved|menu.
+  Shell CSS below uses tokens only; the 80px preview and the part tiles are flagged in the spec (Avatar has no size above 40px).
+-->
+<link rel="stylesheet" href="https://bridgedesignsystem.com/claude-design-system/1.8.6/project/tokens.css">
+<link rel="stylesheet" href="https://bridgedesignsystem.com/claude-design-system/1.8.6/project/components/bundle.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://bridgedesignsystem.com/claude-design-system/1.8.6/project/components/bundle.js"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--color-bg-default); color: var(--color-text-default); font-family: var(--font-family-sans); font-size: var(--typography-ui-size); line-height: var(--typography-ui-line-height); }
+  p { margin: 0; }
+
+  /* Studio shell, simplified: top bar, sample team line, rail. */
+  .top { height: var(--size-14); display: flex; align-items: center; gap: var(--space-6); padding: 0 var(--space-6); background: var(--color-bg-subtle); border-bottom: var(--border-width-default) solid var(--color-border-default); }
+  .wordmark { font-family: var(--font-family-display); font-size: var(--typography-h3-size); font-weight: 600; color: var(--color-text-default); }
+  .wordmark b { color: var(--color-action-primary-bg); font-weight: 600; }
+  .search { flex: 0 1 var(--size-108, 432px); margin-inline: auto; height: var(--size-10); border: var(--border-width-default) solid var(--color-border-default); border-radius: var(--radius-control); background: var(--color-surface-default); display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3); color: var(--color-text-muted); }
+  .sample { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-6); background: var(--color-feedback-warning-bg, var(--color-bg-subtle)); border-bottom: var(--border-width-default) solid var(--color-border-default); }
+  .sample .grow { flex: 1; }
+  .app { display: flex; flex-direction: column; height: 100vh; }
+  .layout { flex: 1; min-height: 0; display: grid; grid-template-columns: var(--size-64) minmax(0, 1fr); }
+  .main-scroll { overflow: auto; }
+  .rail { background: var(--color-bg-subtle); border-right: var(--border-width-default) solid var(--color-border-default); padding: var(--space-6) var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+  .rail .grow { flex: 1; }
+  .team { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2); font-weight: var(--font-weight-semibold); }
+  .acct { border-top: var(--border-width-default) solid var(--color-border-default); padding-top: var(--space-3); }
+  .acct button { display: flex; flex-direction: row; justify-content: flex-start; align-items: center; gap: var(--space-3); width: 100%; height: auto; padding: var(--space-2); text-align: start; }
+  .acct button > span { display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0; }
+  .acct-text { display: grid; flex: 1; min-width: 0; }
+  .acct-name { font-weight: var(--font-weight-semibold); }
+  .acct-line { color: var(--color-text-muted); font-size: var(--typography-caption-size); line-height: var(--typography-caption-line-height); }
+  .acc-head { display: grid; gap: var(--space-1); padding: var(--space-2) var(--space-3); }
+
+  main { padding: var(--space-16) var(--space-10) var(--space-16); max-width: calc(var(--size-240) + var(--space-20)); }
+  h1 { margin: 0; font-family: var(--font-family-display); font-size: var(--typography-h2-size); line-height: var(--typography-h2-line-height); font-weight: 600; }
+  .summary { margin: var(--space-2) 0 var(--space-8); }
+  .group { display: grid; gap: var(--space-10); margin-top: var(--space-8); }
+
+  /* Settings bands and rows, as styles/settings.css and styles/team-access.css draw them. */
+  .ts-band { display: grid; gap: var(--space-3); }
+  .ts-h { margin: 0; font-size: var(--typography-h3-size); font-weight: var(--typography-h3-weight); line-height: var(--typography-h3-line-height); }
+  .ts-intro { margin: 0 0 var(--space-2); color: var(--color-text-muted); }
+  .set-row { display: grid; grid-template-columns: minmax(var(--size-40), 30%) minmax(0, 1fr) auto; align-items: center; gap: var(--space-2) var(--space-6); }
+  .set-row-label { font-weight: var(--font-weight-semibold); }
+  .set-row-help { color: var(--color-text-muted); }
+  .set-row-action { display: flex; justify-content: flex-end; }
+  .set-row.is-open { align-items: start; }
+
+  /* The face editor, inside the value column. */
+  .editor { grid-column: 2 / -1; display: grid; gap: var(--space-6); }
+  .stage { display: flex; align-items: center; gap: var(--space-8); }
+  .big { position: relative; width: var(--size-20); height: var(--size-20); border-radius: var(--radius-pill); background: var(--avatar-illustrated-bg); overflow: hidden; flex: none; }
+  .big img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .riffle img { animation: riffle var(--motion-duration-slow) var(--motion-easing-enter) both; }
+  @keyframes riffle { from { transform: translateY(var(--space-2)) rotate(-4deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  .riffle-frame { animation: flip var(--motion-duration-fast) var(--motion-easing-standard) both; }
+  @keyframes flip { from { transform: translateY(calc(-1 * var(--space-2))); } to { transform: translateY(var(--space-2)); } }
+  @media (prefers-reduced-motion: reduce) { .riffle img, .riffle-frame { animation: none; } }
+  .team-strip { display: grid; gap: var(--space-2); }
+  .strip-label { color: var(--color-text-muted); }
+  .strip { display: flex; gap: var(--space-4); }
+  .who { display: grid; justify-items: center; gap: var(--space-1); min-width: var(--size-10); }
+  .who span { font-size: var(--typography-caption-size); line-height: var(--typography-caption-line-height); color: var(--color-text-muted); }
+  .who.me span { color: var(--color-text-default); font-weight: var(--font-weight-semibold); }
+  .tools { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+  .tools .note { color: var(--color-text-muted); }
+  .parts { display: grid; gap: var(--space-4); }
+  .parts-help { color: var(--color-text-muted); }
+  .tiles { display: grid; grid-template-columns: repeat(8, var(--size-16)); gap: var(--space-3) var(--space-2); margin-top: var(--space-4); }
+  .tile { display: grid; justify-items: center; gap: var(--space-1); }
+  .tile .cap { font-size: var(--typography-caption-size); line-height: var(--typography-caption-line-height); color: var(--color-text-muted); min-height: var(--typography-caption-line-height); }
+  .tile button { width: var(--size-16); height: var(--size-16); padding: 0; justify-content: center; }
+  .tile button[aria-disabled="true"] { cursor: not-allowed; }
+  .tile button[aria-disabled="true"] .face40 { filter: grayscale(1); opacity: 0.55; }
+  .face40 { width: var(--size-10); height: var(--size-10); border-radius: var(--radius-pill); background: var(--avatar-illustrated-bg); overflow: hidden; display: block; }
+  .face40 img { width: 100%; height: 100%; display: block; }
+  .more { margin-top: var(--space-2); display: flex; align-items: baseline; gap: var(--space-2); }
+  .savebar { display: flex; align-items: center; gap: var(--space-3); padding-top: var(--space-4); border-top: var(--border-width-default) solid var(--color-border-default); }
+  .said { color: var(--color-text-muted); }
+  .said-ok { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .collapsed-value { display: flex; align-items: center; gap: var(--space-3); }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module">
+import { createAvatar } from 'https://cdn.jsdelivr.net/npm/@dicebear/core@9.4.3/+esm';
+import * as notionists from 'https://cdn.jsdelivr.net/npm/@dicebear/notionists@9.4.3/+esm';
+import htm from 'https://cdn.jsdelivr.net/npm/htm@3.1.1/+esm';
+
+const { useState, useEffect, useRef } = React;
+const html = htm.bind(React.createElement);
+const B = window.Bridge;
+const I = B.Icons || {};
+
+// The face drawer, with the options of packages/react/src/avatar-illustrated (face framing, no hands, no body icon).
+const FRAME = { gestureProbability: 0, bodyIconProbability: 0, scale: 125, translateY: 12 };
+const uri = (svg) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+const bySeed = (seed) => uri(createAvatar(notionists, { seed, ...FRAME }).toString());
+const PARTS = ['hair', 'eyes', 'brows', 'nose', 'lips', 'body'];
+function byRecipe(r) {
+  const o = { seed: 'recipe', ...FRAME, glassesProbability: r.glasses ? 100 : 0, beardProbability: r.beard ? 100 : 0 };
+  for (const k of PARTS) o[k] = [r[k]];
+  if (r.glasses) o.glasses = [r.glasses];
+  if (r.beard) o.beard = [r.beard];
+  return uri(createAvatar(notionists, o).toString());
+}
+const v = (n) => `variant${String(n).padStart(2, '0')}`;
+
+// The sample team (lib/demo-cast.ts) as drawn tonight: seeds and the parts they resolve to (Dana is the viewer).
+const DANA = { hair: v(2), lips: v(14), nose: v(20), eyes: v(1), brows: v(7), body: v(3), glasses: null, beard: null };
+const TEAM = [
+  { key: 'sofia', name: 'Sofia', seed: '~sofia', hair: v(32) },
+  { key: 'leo', name: 'Leo', seed: '~leo', hair: v(59) },
+  { key: 'malik', name: 'Malik', seed: 'malik-7', hair: v(53) },
+  { key: 'ann', name: 'Ann', seed: '~ann', hair: v(46) },
+];
+const TAKEN = Object.fromEntries(TEAM.map((p) => [p.hair, p.name]));
+// Hair styles that read the same at 20px (measured: hair-only pixel distance under 0.02, see the spec). Shuffle skips
+// the look-alikes of a taken style; a person may still pick one by hand.
+const NEAR = { variant05: ['variant07', 'variant30', 'variant38'], variant21: ['variant26', 'variant27', 'variant32', 'variant35', 'variant53'], variant32: ['variant35'], variant44: ['variant53', 'variant55'], variant53: ['variant55', 'variant56'] };
+const lookAlikes = (h) => new Set([...(NEAR[h] || []), ...Object.entries(NEAR).filter(([, l]) => l.includes(h)).map(([k]) => k)]);
+
+// The hair tiles shown first: Dana's own, the four taken ones, and eleven free ones. "Show all 64 styles" opens the rest.
+const HAIR_TILES = [2, 32, 17, 59, 9, 40, 53, 3, 46, 11, 28, 61, 20, 45, 36, 63].map(v);
+const GLASSES_TILES = [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((n) => (n ? v(n) : null));
+const BEARD_TILES = [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((n) => (n ? v(n) : null));
+const EXPRESSIONS = [
+  { value: 'calm', label: 'Calm', parts: { eyes: v(1), brows: v(7), lips: v(14) } },
+  { value: 'smile', label: 'Smile', parts: { eyes: v(3), brows: v(2), lips: v(23) } },
+  { value: 'curious', label: 'Curious', parts: { eyes: v(5), brows: v(11), lips: v(6) } },
+  { value: 'focused', label: 'Focused', parts: { eyes: v(2), brows: v(13), lips: v(9) } },
+];
+
+// Shuffle: every part at random, but never a hair style a teammate wears, nor its 20px look-alike.
+function shuffle(rand = Math.random) {
+  const pick = (n) => v(1 + Math.floor(rand() * n));
+  const blocked = new Set(Object.keys(TAKEN));
+  for (const h of Object.keys(TAKEN)) for (const x of lookAlikes(h)) blocked.add(x);
+  let hair;
+  do hair = pick(63); while (blocked.has(hair));
+  return { hair, eyes: pick(5), brows: pick(13), nose: pick(20), lips: pick(30), body: pick(25), glasses: rand() < 0.25 ? pick(11) : null, beard: rand() < 0.15 ? pick(12) : null };
+}
+// The face the screenshots land on (state=shuffled): short curls with round glasses.
+const SHUFFLED = { hair: v(17), eyes: v(3), brows: v(2), nose: v(8), lips: v(23), body: v(11), glasses: v(3), beard: null };
+
+const state = new URLSearchParams(location.search).get('state') || 'collapsed';
+
+function Face40({ src }) {
+  return html`<span class="face40" aria-hidden="true"><img src=${src} alt="" /></span>`;
+}
+
+function Shell({ children, menuOpen, face }) {
+  return html`<div class="app">
+    <header class="top">
+      <span class="wordmark">Bridge <b>Studio</b></span>
+      <div class="search"><${B.Icon} icon=${I.Search} /> Search tokens, components, changes</div>
+      <${B.SegmentedControl} size="sm" label="Space" value="studio" items=${[{ value: 'library', label: 'Library' }, { value: 'studio', label: 'Studio' }]} />
+    </header>
+    <div class="sample">
+      <${B.Icon} icon=${I.Info} />
+      <p class="grow"><strong>Acme Design.</strong> This is a sample team: your edits stay in this browser and nothing is sent.</p>
+      <${B.Button} variant="secondary" size="sm">Get started<//>
+    </div>
+    <div class="layout">
+      <aside class="rail">
+        <div class="team"><${B.Avatar} name="Acme Design" size="sm" decorative /> Acme Design</div>
+        <${B.SidebarNav} aria-label="Studio">
+          <${B.SidebarNavSection}>
+            <${B.SidebarNavItem} icon=${I.Gauge} href="#">Home<//>
+            <${B.SidebarNavItem} icon=${I.GitBranch} href="#" count=${2}>Explorations<//>
+            <${B.SidebarNavItem} icon=${I.Users} href="#" count=${12}>Library review<//>
+            <${B.SidebarNavItem} icon=${I.Wrench} href="#">Being built<//>
+          <//>
+          <${B.SidebarNavSection} title="Design system">
+            <${B.SidebarNavItem} icon=${I.Component} href="#">Components<//>
+            <${B.SidebarNavItem} icon=${I.LayoutGrid} href="#">Tokens<//>
+            <${B.SidebarNavItem} icon=${I.ShieldCheck} href="#">Quality<//>
+            <${B.SidebarNavItem} icon=${I.SlidersHorizontal} href="#" active>Settings<//>
+          <//>
+        <//>
+        <div class="grow"></div>
+        <div class="acct">
+          <${B.Menu} defaultOpen=${menuOpen}>
+            <${B.MenuTrigger} render=${html`<${B.Button} variant="ghost" fullWidth className="acct-trigger" />`}>
+              <${B.Avatar} name="Dana" fallback="illustrated" illustration=${face} size="md" decorative />
+              <span class="acct-text"><span class="acct-name">Dana</span><span class="acct-line">Admin</span></span>
+              <${B.Icon} icon=${I.ChevronsUpDown} />
+            <//>
+            <${B.MenuContent} side="top" align="start">
+              <div class="acc-head"><span class="acct-name">Dana</span><span class="acct-line">dana@acme.example</span></div>
+              <${B.MenuSeparator} />
+              <${B.MenuItem} icon=${html`<${B.Avatar} name="Dana" fallback="illustrated" illustration=${face} size="xs" decorative />`} onClick=${() => location.assign('?state=open')}>Change your face<//>
+              <${B.MenuItem} icon=${I.Settings}>Account settings<//>
+              <${B.MenuItem} icon=${I.LogOut}>Sign out<//>
+            <//>
+          <//>
+        </div>
+      </aside>
+      <div class="main-scroll"><main>${children}</main></div>
+    </div></div>`;
+}
+
+function TeamStrip({ face }) {
+  return html`
+    <div class="team-strip">
+      <p class="strip-label">Next to your team, at the size of a review row</p>
+      <div class="strip" role="list" aria-label="Your face next to your team">
+        <div class="who me" role="listitem"><${B.Avatar} name="Dana, you" fallback="illustrated" illustration=${face} size="sm" /><span>You</span></div>
+        ${TEAM.map((p) => html`<div class="who" role="listitem" key=${p.key}><${B.Avatar} name=${p.name} fallback="illustrated" illustration=${bySeed(p.seed)} size="sm" /><span>${p.name}</span></div>`)}
+      </div>
+    </div>`;
+}
+
+function Tile({ src, pressed, taken, label, onPick, tipOpen }) {
+  const button = html`<${B.Button} variant="ghost" size="lg" pressed=${pressed} aria-label=${taken ? `${label}, taken by ${taken}` : label} aria-disabled=${taken ? 'true' : undefined} onClick=${taken ? undefined : onPick}><${Face40} src=${src} /><//>`;
+  return html`<div class="tile">
+    ${taken ? html`<${B.Tooltip} content=${`Taken by ${taken}`} open=${tipOpen || undefined}>${button}<//>` : button}
+    <span class="cap" aria-hidden="true">${taken || ''}</span>
+  </div>`;
+}
+
+function Parts({ recipe, set, tipOn }) {
+  const [tab, setTab] = useState('hair');
+  const exp = EXPRESSIONS.find((e) => e.parts.eyes === recipe.eyes && e.parts.lips === recipe.lips)?.value;
+  return html`
+    <div class="parts">
+      <${B.Tabs} variant="contained" size="sm" value=${tab} onValueChange=${setTab}>
+        <${B.TabsList} aria-label="Parts of your face">
+          <${B.Tab} value="hair">Hair<//>
+          <${B.Tab} value="glasses">Glasses<//>
+          <${B.Tab} value="beard">Beard<//>
+          <${B.Tab} value="expression">Expression<//>
+        <//>
+        <${B.TabsPanel} value="hair">
+          <div class="tiles" role="group" aria-label="Hair">
+            ${HAIR_TILES.map((h, i) => html`<${Tile} key=${h} src=${byRecipe({ ...recipe, hair: h })} pressed=${recipe.hair === h} taken=${TAKEN[h]} label=${`Hair ${i + 1}`} tipOpen=${tipOn && TAKEN[h] === 'Sofia'} onPick=${() => set({ ...recipe, hair: h })} />`)}
+          </div>
+          <div class="more"><span class="parts-help">Styles a teammate wears are taken.</span> <${B.Button} variant="link" size="sm">Show all 64 styles<//></div>
+        <//>
+        <${B.TabsPanel} value="glasses">
+          <div class="tiles" role="group" aria-label="Glasses">
+            ${GLASSES_TILES.map((g, i) => html`<${Tile} key=${String(g)} src=${byRecipe({ ...recipe, glasses: g })} pressed=${recipe.glasses === g} label=${g ? `Glasses ${i}` : 'No glasses'} onPick=${() => set({ ...recipe, glasses: g })} />`)}
+          </div>
+        <//>
+        <${B.TabsPanel} value="beard">
+          <div class="tiles" role="group" aria-label="Beard">
+            ${BEARD_TILES.map((g, i) => html`<${Tile} key=${String(g)} src=${byRecipe({ ...recipe, beard: g })} pressed=${recipe.beard === g} label=${g ? `Beard ${i}` : 'No beard'} onPick=${() => set({ ...recipe, beard: g })} />`)}
+          </div>
+        <//>
+        <${B.TabsPanel} value="expression">
+          <div class="tiles" style=${{ gridTemplateColumns: 'auto' }}>
+            <${B.SegmentedControl} label="Expression" value=${exp} items=${EXPRESSIONS.map(({ value, label }) => ({ value, label }))} onValueChange=${(x) => set({ ...recipe, ...EXPRESSIONS.find((e) => e.value === x).parts })} />
+            <p class="parts-help">Shows from 40px up: in rows your hair does the talking.</p>
+          </div>
+        <//>
+      <//>
+    </div>`;
+}
+
+function YourFace() {
+  const initialOpen = ['open', 'shuffled', 'parts'].includes(state);
+  const [saved, setSaved] = useState(state === 'saved' ? SHUFFLED : DANA);
+  const [open, setOpen] = useState(initialOpen);
+  const [draft, setDraft] = useState(state === 'shuffled' || state === 'parts' ? SHUFFLED : saved);
+  const [showParts, setShowParts] = useState(state === 'parts');
+  const [riffle, setRiffle] = useState(null);
+  const [said, setSaid] = useState(state === 'saved' ? 'Saved. Your team sees your new face.' : '');
+  const [live, setLive] = useState(state === 'shuffled' ? 'New face: short curls, round glasses.' : '');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const changed = JSON.stringify(draft) !== JSON.stringify(saved);
+
+  const doShuffle = () => {
+    const next = shuffle();
+    setLive('New face.');
+    if (reduce) return setDraft(next);
+    // The riffle: four faces flip past like the pages of a field guide, then the new one settles (300ms in all).
+    const frames = [shuffle(), shuffle(), shuffle()];
+    let i = 0;
+    const t = setInterval(() => {
+      if (i < frames.length) setRiffle(byRecipe(frames[i++]));
+      else { clearInterval(t); setRiffle(null); setDraft(next); }
+    }, 75);
+  };
+  const face = byRecipe(open ? draft : saved);
+  return html`
+    <section class="ts-band" aria-labelledby="ts-face">
+      <h2 id="ts-face" class="ts-h">Your face</h2>
+      <p class="ts-intro">How your team sees you next to your work, in every team you are in.</p>
+      <${B.Card}><${B.CardBody}>
+        <div class=${'set-row' + (open ? ' is-open' : '')}>
+          <div>
+            <p class="set-row-label">Drawn face</p>
+            <p class="set-row-help">${open ? 'Shuffle until it feels like you. Nobody in Acme Design gets the same face.' : 'Made from your name. No photo needed.'}</p>
+          </div>
+          ${!open && html`
+            <div class="collapsed-value">
+              <${B.Avatar} name="Dana" fallback="illustrated" illustration=${byRecipe(saved)} size="lg" decorative />
+              ${said && html`<span class="said said-ok" role="status"><${B.Icon} icon=${I.CircleCheck} /> ${said}</span>`}
+            </div>
+            <div class="set-row-action"><${B.Button} variant="secondary" size="sm" aria-expanded="false" onClick=${() => { setDraft(saved); setSaid(''); setOpen(true); }}>Change<//></div>`}
+          ${open && html`
+            <div class="editor">
+              <div class="stage">
+                <div class=${'big' + (riffle ? ' riffle-frame' : ' riffle')} key=${riffle || face}><img src=${riffle || face} alt="Your drawn face" /></div>
+                <${TeamStrip} face=${face} />
+              </div>
+              <div class="tools">
+                <${B.Button} variant="secondary" iconStart=${I.Shuffle} onClick=${doShuffle}>Shuffle<//>
+                <${B.Button} variant="ghost" iconEnd=${showParts ? I.ChevronUp : I.ChevronDown} aria-expanded=${showParts} onClick=${() => setShowParts(!showParts)}>Pick the parts yourself<//>
+              </div>
+              ${showParts && html`<${Parts} recipe=${draft} set=${setDraft} tipOn=${state === 'parts'} />`}
+              <div class="savebar">
+                <${B.Button} variant="primary" disabled=${!changed} onClick=${() => { setSaved(draft); setOpen(false); setSaid('Saved. Your team sees your new face.'); }}>Save face<//>
+                <${B.Button} variant="ghost" onClick=${() => { setDraft(saved); setOpen(false); }}>Cancel<//>
+              </div>
+              <p class="vh" role="status" aria-live="polite">${live}</p>
+            </div>`}
+        </div>
+      <//><//>
+    </section>`;
+}
+
+function App() {
+  const face = byRecipe(state === 'saved' ? SHUFFLED : DANA);
+  return html`
+    <${B.ThemeProvider}>
+      <${B.TooltipProvider} delay=${200}>
+        <${Shell} menuOpen=${state === 'menu'} face=${face}>
+          <h1>Settings</h1>
+          <p class="summary">Your team, its people, and how changes reach your code.</p>
+          <${B.Tabs} value="you">
+            <${B.TabsList} aria-label="Settings sections">
+              <${B.Tab} value="team">Team<//>
+              <${B.Tab} value="reviews">Reviews<//>
+              <${B.Tab} value="tools">Tools<//>
+              <${B.Tab} value="you">You<//>
+            <//>
+            <${B.TabsPanel} value="you">
+              <div class="group">
+                <${YourFace} />
+                <section class="ts-band" aria-labelledby="ts-appearance">
+                  <h2 id="ts-appearance" class="ts-h">Appearance</h2>
+                  <p class="ts-intro">How Bridge looks for you, only in this browser. It changes nothing for your team.</p>
+                  <${B.Card}><${B.CardBody}>
+                    <div class="set-row">
+                      <p class="set-row-label" id="theme-l">Theme</p>
+                      <div><${B.SegmentedControl} aria-labelledby="theme-l" value="light" items=${[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} /></div>
+                    </div>
+                  <//><//>
+                </section>
+              </div>
+            <//>
+          <//>
+        <//>
+      <//>
+    <//>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);
+window.__ready = true;
+</script>
+</body>
+</html>

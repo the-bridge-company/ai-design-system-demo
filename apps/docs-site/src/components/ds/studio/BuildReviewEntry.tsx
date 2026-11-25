@@ -12,7 +12,7 @@
 // Words and rules: lib/build-review-view.ts (LEDGER_WORDS, ledgerOf).
 import "../../../styles/build-review-entry.css";
 import { useEffect, useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronRight, ChevronUp, ExternalLink, Smartphone } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ChevronUp, Smartphone } from "lucide-react";
 import { Badge, Button, Checkbox, Icon, Link, Progress } from "@bridge-ds/react";
 import ButtonLink from "../ButtonLink";
 import { Who } from "./faces";
@@ -129,14 +129,25 @@ export function BuildReviewActions({
         <span>{L.progress(l.done, l.total)}</span>
         <Progress value={l.done} max={Math.max(1, l.total)} size="sm" aria-label={L.progress(l.done, l.total)} />
       </div>
-      {l.cta === "send" && (
+      {/* The page's one primary, in the zone where actions live (board G, 2026-11-25). */}
+      {l.cta === "start" || l.cta === "continue" ? (
+        <ButtonLink href={hrefOf(product, number, l.todo[0]?.sig ?? "first")} variant="primary" size="md" fullWidth>
+          {l.cta === "start" ? L.start : L.continue}
+        </ButtonLink>
+      ) : l.cta === "send" ? (
         <ButtonLink href={hrefOf(product, number, "answer")} variant="primary" size="md" fullWidth>
           {L.send(builder)}
         </ButtonLink>
-      )}
+      ) : null}
     </div>
   );
 }
+
+/** How much a difference asks of the reader, for the three the summary shows: missing first, then added, then the rest. */
+const weight = (it: ReviewItem) => (/\bmissing\b/i.test(it.line) ? 0 : /\bnot in the design\b|\badded\b|\badds\b/i.test(it.line) ? 1 : 2);
+
+/** The summary shows this many differences; the rest are a count and the way into the check. */
+export const SUMMARY_ROWS = 3;
 
 /** One difference: the whole row opens it in the full check; "Look at N" shows on hover and focus. */
 function Row({
@@ -319,25 +330,41 @@ export function BuildReviewEntry({
       name,
     })}`;
   const sizes = m.sizes.filter((s) => s.a || s.b).length || m.sizes.length;
-  const cta =
-    l.cta === "start" ? (
-      <ButtonLink href={href(l.todo[0]?.sig ?? "first")} variant="primary" size="md">
-        {L.start}
-      </ButtonLink>
-    ) : l.cta === "continue" ? (
-      <ButtonLink href={href(l.todo[0]?.sig ?? "first")} variant="primary" size="md">
-        {L.continue}
-      </ButtonLink>
-    ) : l.cta === "send" && !turnShown ? (
-      <ButtonLink href={href("answer")} variant="primary" size="md">
-        {L.send(builder)}
-      </ButtonLink>
-    ) : l.cta === "look" ? (
-      <ButtonLink href={href("first")} variant="secondary" size="md">
-        {L.look}
-      </ButtonLink>
-    ) : null;
+  // The build at its widest measured size, as the exploration shows its screen: one framed picture that opens the build.
+  const shot = m.sizes.find((s) => s.b)?.b ?? null;
+  // Three differences, the ones that ask the most first; the rest in the check (board G, 2026-11-25).
+  const top = l.rows
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => weight(a.r.it) - weight(b.r.it) || a.i - b.i)
+    .slice(0, SUMMARY_ROWS)
+    .map((x) => x.r);
+  const more = l.rows.length - top.length;
+  // Without the Your turn zone (someone who reads only), the summary's own way in is the only one: still secondary.
+  const into = l.cta ? L.into(l.cta, l.total) : null;
+  const intoHref = l.cta === "send" ? href("answer") : href(l.todo[0]?.sig ?? "first");
+  void turnShown;
   return (
+    <>
+    {shot && (
+      <section className="brl-frame" aria-labelledby="brl-frame-h">
+        <div className="brl-frame-head">
+          <h2 id="brl-frame-h" className="brl-frame-title">
+            {L.builtBy(builder)}
+          </h2>
+          <p className="brl-muted">{L.measured(m.measuredAt, sizes)}</p>
+        </div>
+        {m.urls.build ? (
+          // bridge-audit-ignore-next-line: the picture is the target that opens the build, as the exploration's screen opens its preview; the DS has no image link
+          <a className="brl-shot" href={m.urls.build} target="_blank" rel="noopener" aria-label={W.openBuildOf(possessive(builder))}>
+            <Crop url={img(shot.image)} alt={L.builtBy(builder)} />
+          </a>
+        ) : (
+          <div className="brl-shot">
+            <Crop url={img(shot.image)} alt={L.builtBy(builder)} />
+          </div>
+        )}
+      </section>
+    )}
     <section className="brl" aria-labelledby="brl-h">
       <header className="brl-head">
         <div className="brl-headtext">
@@ -353,14 +380,6 @@ export function BuildReviewEntry({
             </p>
           )}
         </div>
-        <div className="brl-acts">
-          {m.urls.build && (
-            <ButtonLink href={m.urls.build} target="_blank" rel="noopener" variant="secondary" size="md" iconEnd={ExternalLink}>
-              {W.openBuildOf(possessive(builder))}
-            </ButtonLink>
-          )}
-          {cta}
-        </div>
       </header>
       {first && (
         <div className="brl-first">
@@ -375,11 +394,20 @@ export function BuildReviewEntry({
         </div>
       )}
       <ul className="brl-rows" aria-label={L.label}>
-        {l.rows.map(({ it, verdict }) => (
+        {top.map(({ it, verdict }) => (
           <Row key={it.sig} it={it} href={href(it.sig)} verdict={verdict} img={img} buildLabel={L.builtBy(builder)} />
         ))}
       </ul>
+      {into && (
+        <div className="brl-foot">
+          {more > 0 && <span className="brl-muted">{L.more(more)}</span>}
+          <ButtonLink href={intoHref} variant="secondary" size="md" iconEnd={ChevronRight} fullWidth={more === 0}>
+            {into}
+          </ButtonLink>
+        </div>
+      )}
       <Notes d={d} product={product} number={number} builder={builder} started={l.done > 0 || d.items.some((s) => s.others.length > 0)} />
     </section>
+    </>
   );
 }

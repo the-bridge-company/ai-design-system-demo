@@ -1599,7 +1599,18 @@ function ExplorationBody(p: ExplorationPageProps) {
           <div className="xp-b-left">
           <div className="xp-b-screen" id="xp-screen">{screen}</div>
           <div className="xp-b-main">
-            {p.impact?.summary && p.impact.view.state === 'rows' ? (
+            {stage === 'check' && p.impact?.view.state === 'nothing' ? (
+              // Checking the build, the library had nothing to decide: one quiet line, not the Field Guide moment the
+              // exploration showed (board G, 2026-11-25).
+              <div className="xp-library" id="xp-library">
+                <p className="xp-lib-quiet">
+                  <Icon icon={CircleCheck} size="sm" />
+                  <span>
+                    <strong>{p.impact.view.title}.</strong> <span className="xp-muted">{p.impact.view.line}</span>
+                  </span>
+                </p>
+              </div>
+            ) : p.impact?.summary && p.impact.view.state === 'rows' ? (
               <div className="xp-library" id="xp-library">
                 <LibrarySummary view={p.impact.view} designer={p.author.name} links={p.impact.summary.links} />
               </div>

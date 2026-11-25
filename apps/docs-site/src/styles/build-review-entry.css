@@ -25,6 +25,70 @@
 
 /* ---- The list */
 
+/* The build, framed like the exploration's screen (board G): its name and when it was measured, then one picture that
+   opens the build. */
+.brl-frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-block-end: var(--space-6);
+  padding: var(--space-5);
+  border-radius: var(--radius-container);
+  background-color: var(--color-bg-subtle);
+}
+
+.brl-frame-head {
+  display: grid;
+  gap: var(--space-0-5);
+}
+
+.brl-frame-title {
+  margin: 0;
+  font-size: var(--typography-h3-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--typography-h3-line-height);
+}
+
+.brl-shot {
+  display: block;
+  overflow: hidden;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-container);
+  background-color: var(--color-surface-default);
+}
+
+.brl-shot img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.brl-shot .brl-wait {
+  display: block;
+  aspect-ratio: 16 / 10;
+}
+
+a.brl-shot:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Under the three differences: how many more, and the way into the check (secondary; a lone one fills its bar). */
+.brl-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-block-start: var(--border-width-default) solid var(--color-border-default);
+  background-color: var(--color-bg-subtle);
+}
+
+.brl-foot > :last-child {
+  margin-inline-start: auto;
+}
+
 .brl {
   display: flex;
   flex-direction: column;

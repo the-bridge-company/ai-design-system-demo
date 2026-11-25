@@ -239,82 +239,21 @@ a.brl-shot:focus-visible {
   outline-offset: calc(var(--focus-ring-width) * -1);
 }
 
-.brl-row .brl-go,
-.brl-pair {
-  display: none;
-}
-
+/* The whole line is the way into that difference; hovering it only marks it, nothing opens under it (owner, 2026-11-25). */
 .brl-row:focus-within {
   background: var(--color-surface-hover);
-}
-
-.brl-row:focus-within .brl-go {
-  position: relative;
-  display: inline-flex;
-}
-
-.brl-row:focus-within .brl-pair {
-  display: grid;
-}
-
-.brl-row:focus-within .brl-chev {
-  display: none;
 }
 
 @media (hover: hover) {
   .brl-row:hover {
     background: var(--color-surface-hover);
   }
-
-  .brl-row:hover .brl-go {
-    position: relative;
-    display: inline-flex;
-  }
-
-  .brl-row:hover .brl-pair {
-    display: grid;
-  }
-
-  .brl-row:hover .brl-chev {
-    display: none;
-  }
 }
 
-/* The approved design and the build, side by side under the line, the same height. Each crop shows whole, scaled to
-   fit on a quiet surface: a cropped corner would hide the very part that differs. */
-.brl-pair {
-  grid-column: 2 / -1;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-  padding-block: var(--space-2) var(--space-2);
-}
-
-.brl-pair figure {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  min-width: 0;
-}
-
-.brl-pair figcaption {
-  color: var(--color-text-muted);
-  font-size: var(--typography-meta-size);
-  line-height: var(--typography-meta-line-height);
-}
-
-.brl-pair img,
+/* A picture still loading (the build's frame). */
 .brl-wait {
   display: block;
   width: 100%;
-  height: calc(var(--size-20) * 1.25);
-  border: var(--border-width-default) solid var(--color-border-default);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-subtle);
-  object-fit: contain;
-  object-position: center;
-}
-
-.brl-wait {
   background: var(--color-bg-muted);
 }
 
@@ -391,10 +330,5 @@ a.brl-shot:focus-visible {
     flex-direction: column;
     align-items: flex-end;
     gap: var(--space-1);
-  }
-
-  .brl-pair {
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr);
   }
 }

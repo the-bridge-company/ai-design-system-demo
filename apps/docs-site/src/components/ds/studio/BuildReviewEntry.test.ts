@@ -85,11 +85,9 @@ describe('the ledger of differences', () => {
     // The way into the check is secondary here: the Your turn zone holds the primary, never the summary's header.
     expect(within(region).getByRole('link', { name: 'See the 8 in the check' })).toHaveAttribute('href', expect.stringContaining('item=r00000001'));
     expect(within(region).queryByRole('link', { name: 'Start the check' })).toBeNull();
-    // No crops until a line is hovered or focused, and then under that line only.
-    expect(region.querySelectorAll('.brl-pair')).toHaveLength(0);
+    // Nothing opens under a line on hover or focus (owner, 2026-11-25): the line is the way in, no crops, no Look at.
     lines[2]!.focus();
-    await waitFor(() => expect(region.querySelectorAll('.brl-pair')).toHaveLength(1));
-    expect(lines[2]!.closest('li')!.querySelector('.brl-pair')).not.toBeNull();
+    expect(region.querySelectorAll('.brl-pair, .brl-go, img')).toHaveLength(0);
     await expectNoAxeViolations(region);
   });
 

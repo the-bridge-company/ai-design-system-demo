@@ -149,27 +149,13 @@ const weight = (it: ReviewItem) => (/\bmissing\b/i.test(it.line) ? 0 : /\bnot in
 /** The summary shows this many differences; the rest are a count and the way into the check. */
 export const SUMMARY_ROWS = 3;
 
-/** One difference: the whole row opens it in the full check; "Look at N" shows on hover and focus. */
-function Row({
-  it,
-  href,
-  verdict,
-  img,
-  buildLabel,
-}: {
-  it: ReviewItem;
-  href: string;
-  verdict: Verdict | null;
-  img: (name: string) => string;
-  buildLabel: string;
-}) {
-  // The two versions open under this line only, on hover or focus; their pictures load the first time.
-  const [seen, setSeen] = useState(false);
+/** One difference: the whole row opens it in the full check. Nothing opens on hover (owner, 2026-11-25). */
+function Row({ it, href, verdict }: { it: ReviewItem; href: string; verdict: Verdict | null }) {
   const said = verdict === "fine" ? W.fine : verdict === "fix" ? W.fix : null;
   const label = `${L.lookAtLabel(it.n, it.name)}${said ? `: ${said}` : ""}`;
   return (
-    <li className={`brl-row ${verdict ? `is-${verdict}` : ""}`} onPointerEnter={() => setSeen(true)} onFocus={() => setSeen(true)}>
-      {/* bridge-audit-ignore-next-line: the whole line is the way into that difference (CTA 1), its keyboard stop too; a DS Link would underline the row. "Look at N" repeats it for the pointer. */}
+    <li className={`brl-row ${verdict ? `is-${verdict}` : ""}`}>
+      {/* bridge-audit-ignore-next-line: the whole line is the way into that difference, its keyboard stop too; a DS Link would underline the row. */}
       <a href={href} className="brl-cover" aria-label={label} />
       <span className="brl-num" aria-hidden="true">
         {it.n}
@@ -189,22 +175,7 @@ function Row({
           </Badge>
         )}
         <Icon icon={ChevronRight} size="sm" className="brl-chev" />
-        <ButtonLink href={href} variant="secondary" size="sm" iconEnd={ChevronRight} className="brl-go" tabIndex={-1} aria-hidden="true">
-          {L.lookAt(it.n)}
-        </ButtonLink>
       </span>
-      {seen && (
-        <div className="brl-pair">
-          <figure>
-            <figcaption>{L.approved}</figcaption>
-            {it.crop.a ? <Crop url={img(it.crop.a)} alt="" /> : <span className="brl-wait" />}
-          </figure>
-          <figure>
-            <figcaption>{buildLabel}</figcaption>
-            {it.crop.b ? <Crop url={img(it.crop.b)} alt="" /> : <span className="brl-wait" />}
-          </figure>
-        </div>
-      )}
     </li>
   );
 }
@@ -396,7 +367,7 @@ export function BuildReviewEntry({
       )}
       <ul className="brl-rows" aria-label={L.label}>
         {top.map(({ it, verdict }) => (
-          <Row key={it.sig} it={it} href={href(it.sig)} verdict={verdict} img={img} buildLabel={L.builtBy(builder)} />
+          <Row key={it.sig} it={it} href={href(it.sig)} verdict={verdict} />
         ))}
       </ul>
       {into && (

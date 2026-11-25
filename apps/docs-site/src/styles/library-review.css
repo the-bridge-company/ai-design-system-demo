@@ -959,8 +959,10 @@ a.lr-ask {
   line-height: var(--typography-meta-line-height);
 }
 
+/* The Badge never shrinks by default (flex-shrink 0): here the first tag gives way, so "+N" stays in its column. */
 .lr-tags .lr-tag-name {
   display: block;
+  flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -970,6 +972,7 @@ a.lr-ask {
 
 .lr-tags .lr-tag-link {
   display: flex;
+  flex: 0 1 auto;
   min-width: 0;
   text-decoration-line: none;
 }
@@ -1043,7 +1046,7 @@ a.lr-ask {
    (the Map and One by one still say it), then Today › After. The widths keep Piece on at most two lines and the
    Exploration and Product tags on one line (worst case, Asked by naming several people); when even the narrow columns would squeeze a word, the rows stack as on a phone. */
 @media (min-width: 761px) {
-  @container lr-list (max-width: 1179.98px) {
+  @container lr-list (max-width: 1195.98px) {
     .lr-list :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-mid);
     }
@@ -1053,7 +1056,7 @@ a.lr-ask {
     }
   }
 
-  @container lr-list (max-width: 1069.98px) {
+  @container lr-list (max-width: 1085.98px) {
     .lr-list :is(.lr-chapter-cols, .lr-row) {
       --lr-grid: var(--lr-cols-narrow);
     }
@@ -1064,7 +1067,7 @@ a.lr-ask {
   }
 
   /* Too narrow for the columns: the rows stack as on a phone (the same rules as the Phones section below). */
-  @container lr-list (max-width: 889.98px) {
+  @container lr-list (max-width: 905.98px) {
     .lr-chapter-cols {
       display: none;
     }

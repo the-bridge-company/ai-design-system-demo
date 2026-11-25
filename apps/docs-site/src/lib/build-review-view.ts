@@ -357,8 +357,11 @@ export const LEDGER_WORDS = {
   },
   title: (builder: string, designer: string | null) => `Where ${possessive(builder)} build differs from ${designer ? `${possessive(designer)} design` : 'your design'}`,
   start: 'Start the check',
-  continue: 'Continue',
+  continue: 'Continue the check',
   send: (builder: string) => `Send your answer to ${builder}`,
+  /** The summary's way into the check, secondary: the Your turn zone holds the primary (board G, 2026-11-25). */
+  into: (cta: LedgerCta, total: number) => (cta === 'start' ? `See the ${total} in the check` : cta === 'continue' ? 'Continue in the check' : cta === 'send' ? 'Review answers in the check' : 'Look at the differences'),
+  more: (n: number) => `and ${n} more in the check`,
   look: 'Look at the differences',
   lookAt: (n: number) => `Look at ${n}`,
   lookAtLabel: (n: number, name: string) => `Look at ${n}, ${name}`,

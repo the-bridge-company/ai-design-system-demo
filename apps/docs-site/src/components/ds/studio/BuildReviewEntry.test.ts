@@ -31,7 +31,7 @@ vi.mock('../../../scripts/build-review-data', () => ({
   },
 }));
 
-const { BuildReviewEntry } = await import('./BuildReviewEntry');
+const { BuildReviewEntry, BuildReviewActions } = await import('./BuildReviewEntry');
 const BuildReview = (await import('./BuildReview')).default;
 
 function read(o: Partial<ReviewRead> = {}): ReviewRead {
@@ -72,43 +72,58 @@ const ledger = async (props: { turnShown?: boolean } = {}) => {
 };
 
 describe('the ledger of differences', () => {
-  it('the designer: every difference one line, each line the way in; the two versions only once a line is hovered or focused', async () => {
+  it('the designer: three differences, each line the way in, then how many more and the way into the check (board G)', async () => {
     world.read = read();
     const region = await ledger();
     expect(within(region).getByRole('heading', { name: "Where Malik's build differs from your design" })).toBeInTheDocument();
     expect(within(region).getByText('8 differences, 3 only on a phone')).toBeInTheDocument();
-    expect(within(region).getByRole('link', { name: 'Start the check' })).toHaveAttribute('href', expect.stringContaining('item=r00000001'));
     const lines = within(region).getAllByRole('link', { name: /^Look at \d/ });
-    expect(lines).toHaveLength(8);
+    expect(lines).toHaveLength(3);
     expect(lines[2]).toHaveAccessibleName('Look at 3, Add a note');
     expect(lines[2]).toHaveAttribute('href', expect.stringContaining('explorations/review/?exploration=2&product=crm&item=r00000003'));
-    expect(within(region).queryByRole('button', { name: /Show \d more/ })).toBeNull();
+    expect(within(region).getByText('and 5 more in the check')).toBeInTheDocument();
+    // The way into the check is secondary here: the Your turn zone holds the primary, never the summary's header.
+    expect(within(region).getByRole('link', { name: 'See the 8 in the check' })).toHaveAttribute('href', expect.stringContaining('item=r00000001'));
+    expect(within(region).queryByRole('link', { name: 'Start the check' })).toBeNull();
     // No crops until a line is hovered or focused, and then under that line only.
     expect(region.querySelectorAll('.brl-pair')).toHaveLength(0);
     lines[2]!.focus();
     await waitFor(() => expect(region.querySelectorAll('.brl-pair')).toHaveLength(1));
     expect(lines[2]!.closest('li')!.querySelector('.brl-pair')).not.toBeNull();
-    // The header's primary never follows the line.
-    expect(within(region).getByRole('link', { name: 'Start the check' })).toHaveAttribute('href', expect.stringContaining('item=r00000001'));
     await expectNoAxeViolations(region);
   });
 
-  it('after 2 of 8: answered lines keep their place and number with their answer; Continue', async () => {
+  it('shows first what asks the most: a missing piece, then an added one, then the rest', async () => {
+    const items = ITEMS.map((it) => (it.n === 5 ? { ...it, line: 'Tasks is missing' } : it.n === 4 ? { ...it, line: 'SK added, not in the design' } : it));
+    world.read = read({ review: { ...read().review!, items } });
+    const region = await ledger();
+    expect(within(region).getAllByRole('link', { name: /^Look at \d/ }).map((a) => a.getAttribute('aria-label'))).toEqual(['Look at 5, Tasks', 'Look at 4, Tags', 'Look at 1, Header']);
+  });
+
+  it('the build, framed like the exploration\'s screen: its picture opens the build', async () => {
+    const r = read();
+    world.read = read({ review: { ...r.review!, sizes: [{ ...r.review!.sizes[0]!, b: { image: 'laptop-b', w: 1280, h: 800 } as never }, ...r.review!.sizes.slice(1)] } });
+    await ledger();
+    const frame = screen.getByRole('region', { name: "Malik's build" });
+    expect(within(frame).getByRole('link', { name: "Open Malik's build" })).toHaveAttribute('href', 'https://build.example');
+  });
+
+  it('after 2 of 8: answered lines keep their place and number with their answer; Continue in the check', async () => {
     world.read = read({ items: states({ 1: 'fine', 2: 'fix' }) });
     const region = await ledger();
     const lines = within(region).getAllByRole('link', { name: /^Look at \d/ });
-    expect(lines.slice(0, 3).map((a) => a.getAttribute('aria-label'))).toEqual(['Look at 1, Header: Fine as built', 'Look at 2, Navigation: Fix this', 'Look at 3, Add a note']);
+    expect(lines.map((a) => a.getAttribute('aria-label'))).toEqual(['Look at 1, Header: Fine as built', 'Look at 2, Navigation: Fix this', 'Look at 3, Add a note']);
     expect(lines[0]!.closest('li')!.querySelector('.brl-num')!.textContent).toBe('1');
     expect(within(region).getByText('2 of 8 answered · 1 to fix so far')).toBeInTheDocument();
-    expect(within(region).getByRole('link', { name: 'Continue' })).toHaveAttribute('href', expect.stringContaining('item=r00000003'));
-    expect(within(region).queryByRole('link', { name: 'Start the check' })).toBeNull();
+    expect(within(region).getByRole('link', { name: 'Continue in the check' })).toHaveAttribute('href', expect.stringContaining('item=r00000003'));
+    expect(within(region).queryByRole('link', { name: /Start the check|Continue the check/ })).toBeNull();
   });
 
-  it('all answered: the zone holds Send your answer, so the header has no primary', async () => {
+  it('all answered: the zone holds Send your answer, the summary only offers to review the answers', async () => {
     world.read = read({ items: states(Object.fromEntries(ITEMS.map((i) => [i.n, 'fine']))) });
     const region = await ledger({ turnShown: true });
-    expect(within(region).queryByRole('link', { name: /Send your answer|Continue|Start the check/ })).toBeNull();
-    expect(within(region).getByRole('link', { name: /Open Malik's build/ })).toBeInTheDocument();
+    expect(within(region).queryByRole('link', { name: /Send your answer|Start the check|Continue the check/ })).toBeNull();
+    expect(within(region).getByRole('link', { name: 'Review answers in the check' })).toHaveAttribute('href', expect.stringContaining('item=answer'));
   });
 
   it('the handover notes: folded until someone starts, then each tick is saved', async () => {
@@ -131,7 +146,7 @@ describe('the ledger of differences', () => {
     const region = await ledger();
     expect(within(region).getByRole('heading', { name: "Where Malik's build differs from Sofia's design" })).toBeInTheDocument();
     expect(within(region).getByText('Sofia or you can answer. The first answer goes to Malik.')).toBeInTheDocument();
-    expect(within(region).getByRole('link', { name: 'Start the check' })).toBeInTheDocument();
+    expect(within(region).getByRole('link', { name: 'See the 8 in the check' })).toBeInTheDocument();
     expect(within(region).getByRole('heading', { name: "Sofia's handover notes" })).toBeInTheDocument();
   });
 
@@ -140,7 +155,7 @@ describe('the ledger of differences', () => {
     const region = await ledger();
     expect(within(region).getByText('Dana answered, sent to Malik')).toBeInTheDocument();
     expect(within(region).getByRole('link', { name: 'Add a comment' })).toHaveAttribute('href', '#xp-compose');
-    expect(within(region).queryByRole('link', { name: /Start the check|Continue/ })).toBeNull();
+    expect(within(region).queryByRole('link', { name: /Start the check|Continue|in the check/ })).toBeNull();
   });
 
   it('someone who cannot answer reads the rows with Look at the differences, and cannot tick', async () => {
@@ -154,6 +169,22 @@ describe('the ledger of differences', () => {
     world.read = read({ review: null });
     render(createElement(BuildReviewEntry, { product: 'crm', number: 2, fallback: createElement('p', null, 'The compare') }));
     expect(await screen.findByText('The compare')).toBeInTheDocument();
+  });
+});
+
+describe('the Your turn zone at Check the build (board G)', () => {
+  it('holds the page\'s one primary: Start the check, then Continue the check, then Send your answer', async () => {
+    world.read = read();
+    const first = render(createElement(BuildReviewActions, { product: 'crm', number: 2, builder: 'Malik', fallback: null }));
+    expect(await screen.findByRole('link', { name: 'Start the check' })).toHaveAttribute('href', expect.stringContaining('item=r00000001'));
+    first.unmount();
+    world.read = read({ items: states({ 1: 'fine' }) });
+    const next = render(createElement(BuildReviewActions, { product: 'crm', number: 2, builder: 'Malik', fallback: null }));
+    expect(await screen.findByRole('link', { name: 'Continue the check' })).toHaveAttribute('href', expect.stringContaining('item=r00000002'));
+    next.unmount();
+    world.read = read({ items: states(Object.fromEntries(ITEMS.map((i) => [i.n, 'fine']))) });
+    render(createElement(BuildReviewActions, { product: 'crm', number: 2, builder: 'Malik', fallback: null }));
+    expect(await screen.findByRole('link', { name: 'Send your answer to Malik' })).toBeInTheDocument();
   });
 });
 

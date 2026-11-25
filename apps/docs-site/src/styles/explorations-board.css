@@ -23,11 +23,6 @@
   background-color: var(--color-bg-zone);
 }
 
-.ex-col-num {
-  display: inline-block;
-  margin-inline-start: var(--space-1);
-}
-
 /* Review: always at the end of a waiting row, as on the Home's rows (the same row, the same action); on a waiting card
    (grid, board) on hover or keyboard focus, always on touch (a 44px target there). */
 .ex-review {

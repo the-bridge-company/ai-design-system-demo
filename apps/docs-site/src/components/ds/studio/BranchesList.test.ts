@@ -107,12 +107,23 @@ describe('Explorations', () => {
     expect([...container.querySelectorAll('.bl-group:not(.ex-waiting) h2')].map((h) => h.textContent)).toEqual(['Acme CRM 1', 'Acme Prints 1']);
   });
 
-  it('keeps Waiting on you whatever the filters, and hides it when nothing waits', async () => {
-    history.replaceState(null, '', '/studio/explorations/?status=shipped');
-    const { container, rerender } = render(createElement(BranchesList, props()));
+  it('filters Waiting on you like every row (owner, 2026-11-25), and hides it when nothing waits', async () => {
+    // Sofia's Acme CRM exploration waits on you: shown by default, gone under Product Acme Prints or Status Shipped.
+    history.replaceState(null, '', '/studio/explorations/');
+    const { container, rerender, unmount } = render(createElement(BranchesList, props()));
     expect(container.querySelector('.ex-waiting')).toBeTruthy();
-    rerender(createElement(BranchesList, props({ rows: [xp(2, 'leo')] })));
-    expect(container.querySelector('.ex-waiting')).toBeNull();
+    unmount();
+    history.replaceState(null, '', '/studio/explorations/?product=prints');
+    const prints = render(createElement(BranchesList, props()));
+    expect(prints.container.querySelector('.ex-waiting')).toBeNull();
+    expect(prints.container.textContent).not.toContain('Exploration 1');
+    prints.unmount();
+    history.replaceState(null, '', '/studio/explorations/?status=shipped');
+    const shipped = render(createElement(BranchesList, props()));
+    expect(shipped.container.querySelector('.ex-waiting')).toBeNull();
+    shipped.rerender(createElement(BranchesList, props({ rows: [xp(2, 'leo')] })));
+    expect(shipped.container.querySelector('.ex-waiting')).toBeNull();
+    void rerender;
   });
 
   it('leaves library changes to Library review', () => {
@@ -128,18 +139,16 @@ describe('Explorations', () => {
     const items = within(menu).getAllByRole('option');
     // Counts include what waits on you (Exploration 1 is pinned, and still counts as In review).
     expect(within(menu).getByRole('option', { name: /^In review/ }).textContent).toMatch(/1$/);
-    // In progress is the empty pick, said as the value, never an option; a status with nothing in it is not listed.
-    expect(items.map((i) => i.textContent?.replace(/\d+$/, ''))).toEqual(['Exploring', 'In review', 'Checking']);
-    expect(items.every((i) => i.getAttribute('aria-selected') === 'false')).toBe(true);
+    // In progress is the default: its statuses ticked, empty ones too (owner, 2026-11-25: the menu says what the
+    // trigger says, and an empty Board column can be unticked away); Shipped, empty and not ticked, is not listed.
+    expect(items.map((i) => i.textContent?.replace(/\d+$/, ''))).toEqual(['Exploring', 'In review', 'Ready to build', 'Being built', 'Checking']);
+    expect(items.every((i) => i.getAttribute('aria-selected') === 'true')).toBe(true);
+    // Unticking one leaves the others: Checking off, Exploration 3 (checking) goes.
     await user.click(within(menu).getByRole('option', { name: /^Checking/ }));
-    expect(new URLSearchParams(location.search).get('status')).toBe('checking');
-    expect(screen.getByRole('combobox', { name: 'Status: Checking' })).toBeTruthy();
-    expect(screen.queryByText('Exploration 2')).toBeNull();
-    expect(screen.getByText('Exploration 3')).toBeTruthy();
-    // Several statuses combine, the list staying open; the trigger leads with the first.
-    await user.click(within(menu).getByRole('option', { name: /^Exploring/ }));
-    expect(new URLSearchParams(location.search).get('status')).toBe('exploring,checking');
-    expect(screen.getByRole('combobox', { name: 'Status: Exploring +1' })).toBeTruthy();
+    expect(new URLSearchParams(location.search).get('status')!.split(',')).not.toContain('checking');
+    expect(screen.queryByText('Exploration 3')).toBeNull();
+    expect(screen.getByText('Exploration 2')).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: /^Status: Exploring \+\d$/ })).toBeTruthy();
   });
 
   it('says what matched nothing, with Clear filters', async () => {
@@ -167,10 +176,11 @@ describe('Explorations', () => {
     await user.click(screen.getByRole('radio', { name: /Board/ }));
     const cols = [...container.querySelectorAll('.ex-col h2')].map((h) => h.textContent);
     // What waits on you sits in its own column, marked Your turn, and counts there: no pinned list above the Board.
-    // The column's count sits in the nav's pill when some of it waits on you; no "your turn" words.
+    // Every column's count is the same count tag; the one with your turn says how many to a screen reader.
     // The filter's statuses only (In progress): no Shipped column the List would not show.
     expect(cols).toEqual(['Exploring 13', 'In review 1', 'Ready to build 0', 'Being built 0', 'Checking 1']);
-    expect(container.querySelector('.ex-col-num')!.getAttribute('aria-label')).toBe('1, 1 for you');
+    expect(container.querySelector('.ex-col:nth-child(2) .count-tag')!.getAttribute('aria-label')).toBe('1, 1 for you');
+    expect(container.querySelectorAll('.ex-col-h .count-tag')).toHaveLength(5);
     // An empty column is marked (it keeps the same width as the others: styles/explorations-board.css).
     expect([...container.querySelectorAll('.ex-col.is-empty h2')].map((h) => h.textContent)).toEqual(['Ready to build 0', 'Being built 0']);
     expect(container.querySelector('.ex-waiting')).toBeNull();

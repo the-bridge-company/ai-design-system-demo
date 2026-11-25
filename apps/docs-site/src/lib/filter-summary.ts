@@ -18,17 +18,18 @@ export function inFamilies(value: string, picked: string | readonly string[]): b
   return !picked.length || picked.includes(value);
 }
 
-/** The options a filter lists: empty ones only when ticked, and then last. */
+/** The options a filter lists, in their own order: empty ones only when ticked. */
 export function listedOptions<T extends FilterOption>(options: readonly T[], picked: readonly string[]): T[] {
-  const full = options.filter((o) => o.count !== 0);
-  const emptyPicked = options.filter((o) => o.count === 0 && picked.includes(o.value));
-  return [...full, ...emptyPicked];
+  // In the options' own order (a status ladder stays a ladder): an empty option shows only while it is ticked.
+  return options.filter((o) => o.count !== 0 || picked.includes(o.value));
 }
 
 /** What the trigger reads after the filter's name: the "all" word, one label, or "<first> +N". */
 export function filterSummary(options: readonly FilterOption[], picked: readonly string[], all: string): string {
   if (!picked.length) return all;
-  const ordered = listedOptions(options, picked).filter((o) => picked.includes(o.value));
+  // An empty option never leads the trigger: the ticked ones with items first, in their order, then the empty ones.
+  const ticked = listedOptions(options, picked).filter((o) => picked.includes(o.value));
+  const ordered = [...ticked.filter((o) => o.count !== 0), ...ticked.filter((o) => o.count === 0)];
   // A ticked value the options no longer know (an old address) still counts, after the known ones.
   const unknown = picked.filter((v) => !options.some((o) => o.value === v));
   const lead = ordered[0]?.label ?? unknown[0]!;

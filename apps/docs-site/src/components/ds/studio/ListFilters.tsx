@@ -96,14 +96,16 @@ export interface MultiFilterProps {
   /** The ticked values; empty means the "all" word. */
   picked: readonly string[];
   onPick: (values: string[]) => void;
+  /** What the trigger reads instead of the ticked names, when the ticks are a named set ("In progress"). */
+  summary?: string;
 }
 
-export function MultiFilter({ label, all, options, picked, onPick }: MultiFilterProps) {
+export function MultiFilter({ label, all, options, picked, onPick, summary }: MultiFilterProps) {
   return (
     <Select
       multiple
       inlineLabel={label}
-      displayValue={filterSummary(options, picked, all)}
+      displayValue={summary ?? filterSummary(options, picked, all)}
       className="bl-filter"
       options={listedOptions(options, picked).map((o) => ({ value: o.value, label: o.label, badge: o.count === undefined ? undefined : <CountTag n={o.count} /> }))}
       values={picked}

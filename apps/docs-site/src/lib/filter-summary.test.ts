@@ -20,9 +20,9 @@ describe('filter summary', () => {
     expect(filterSummary(PRODUCTS, ['gone'], 'All products')).toBe('gone');
   });
 
-  it('hides options with no item unless ticked, then lists them last', () => {
+  it('hides options with no item unless ticked, keeping the options\' order (a status ladder stays a ladder)', () => {
     expect(listedOptions(PRODUCTS, []).map((o) => o.value)).toEqual(['crm', 'pay']);
-    expect(listedOptions(PRODUCTS, ['ds']).map((o) => o.value)).toEqual(['crm', 'pay', 'ds']);
+    expect(listedOptions(PRODUCTS, ['ds']).map((o) => o.value)).toEqual(PRODUCTS.filter((o) => o.value !== 'gone').map((o) => o.value).filter((v) => ['crm', 'pay', 'ds'].includes(v)));
     // Options without a count are always listed.
     expect(listedOptions([{ value: 'a', label: 'A' }], []).map((o) => o.value)).toEqual(['a']);
   });

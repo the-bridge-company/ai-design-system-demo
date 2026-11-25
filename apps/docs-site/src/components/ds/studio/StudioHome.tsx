@@ -123,9 +123,8 @@ function OnlyReviewerHint({ needs, snoozed }: { needs: NeedRow[]; snoozed: boole
 function Needs({ needs, now, snoozed, tour, join, contributor }: { needs: NeedRow[]; now: number; snoozed: boolean; tour?: HomeTour; join?: JoinHandlers; contributor?: boolean }) {
   const { shown, more } = splitNeeds(needs);
   const moreAction = moreNeedsAction(Boolean(contributor));
-  // A reviewer's Review all opens Library review, the one queue of library pieces: the other rows (a usage guidance
-  // draft, a library check, an exploration's review) unfold here, each row acting on its own.
-  const [unfolded, setUnfolded] = useState(false);
+  // A reviewer's Review all opens Library review, the one queue of library pieces. No "Show them here" (owner,
+  // 2026-11-25): it added a second way to the same rows and said nothing the button does not.
   // The step floats under the rows it talks about (HomeTour.tsx): its anchor sits on the zone's bottom edge wherever
   // it renders, and takes no room.
   const narrow = useNarrow();
@@ -149,17 +148,11 @@ function Needs({ needs, now, snoozed, tour, join, contributor }: { needs: NeedRo
           </p>
           {/* A reviewer: Library review, the one queue of library pieces. Someone without a review right: their own work
               on Explorations (only reviewers get the queue). */}
-          {!contributor && (
-            <Button variant="ghost" size="md" aria-expanded={unfolded} onClick={() => setUnfolded((o) => !o)}>
-              {unfolded ? 'Fold them' : 'Show them here'}
-            </Button>
-          )}
           <ButtonLink variant="primary" href={studioHref(moreAction.path)} className="sh-more-btn">
             {moreAction.label}
           </ButtonLink>
         </div>
       )}
-      {more && unfolded && !contributor && <NeedList rows={needs.slice(shown.length)} compact shots join={join} />}
       {more && tour?.('more')}
       <OnlyReviewerHint needs={needs} snoozed={snoozed} />
     </>

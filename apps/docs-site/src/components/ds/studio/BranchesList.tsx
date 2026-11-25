@@ -264,6 +264,9 @@ export function BranchesList(p: BranchesListProps) {
   const pinned = new Set(waiting.map((x) => x.r));
   const listed = items.filter((x) => !pinned.has(x.r));
   const kept = listed.filter((x) => passes(x, filters));
+  // What waits on you follows the filters too: Product Acme Prints never shows an Acme CRM card, pinned or not. The
+  // nav badge and Home still count every one (merged, below).
+  const waitingShown = waiting.filter((x) => passes(x, filters));
   // Once the list is read in full, what waits here is the badge's number too (written only when it changed).
   const mergedKey = JSON.stringify(merged);
   useEffect(() => {
@@ -434,8 +437,8 @@ export function BranchesList(p: BranchesListProps) {
   const inProgressDefault = filters.status.length === IN_PROGRESS.length && IN_PROGRESS.every((s) => filters.status.includes(s));
   // The Board shows no pinned list: what waits on you sits in its status column, marked Your turn, counted there. Its
   // columns are the filter's statuses, nothing more: List, Grid and Board count the same rows.
-  const columns = boardColumns([...waiting, ...kept], filters.status);
-  const shownCount = view === 'board' ? columns.reduce((n, c) => n + c.rows.length, 0) : waiting.length + kept.length;
+  const columns = boardColumns([...waitingShown, ...kept], filters.status);
+  const shownCount = view === 'board' ? columns.reduce((n, c) => n + c.rows.length, 0) : waitingShown.length + kept.length;
   // GitHub could not be read and nothing was saved: no count of 0, no "Nothing in progress", one quiet line instead.
   const blind = Boolean(p.unread) && openItems.length === 0 && !waiting.length;
 
@@ -450,14 +453,9 @@ export function BranchesList(p: BranchesListProps) {
           <section className={c.rows.length ? 'ex-col' : 'ex-col is-empty'} key={c.key} aria-labelledby={`ex-col-${c.key}`}>
             <h2 className="ex-col-h" id={`ex-col-${c.key}`}>
               {c.label}{' '}
-              {/* What waits on you in the column: the count in the nav's own pill; the tinted cards say which. */}
-              {yours > 0 ? (
-                <span className="rail-num ex-col-num" aria-label={`${c.rows.length}, ${yours} for you`}>
-                  {c.rows.length}
-                </span>
-              ) : (
-                <CountTag n={c.rows.length} />
-              )}
+              {/* One count look on every column (owner, 2026-11-25); the tinted cards say which wait on you, and the
+                  count says how many to a screen reader. */}
+              <CountTag n={c.rows.length} {...(yours > 0 ? { label: `${c.rows.length}, ${yours} for you` } : {})} />
             </h2>
             {c.rows.length > 0 && <ul className="ex-col-cards">{shown.map((x) => card(x, { pill: false, product: true, turn: pinned.has(x.r) }))}</ul>}
             {c.rows.length > BOARD_CAP && !open && (
@@ -475,12 +473,14 @@ export function BranchesList(p: BranchesListProps) {
     <div className="bl ex">
       <div className="bl-bar">
         <FilterRow as="span" className="bl-narrow">
-          {/* In progress (the first six statuses) is the empty pick, said as the value, never an option. */}
+          {/* In progress is the default: its statuses ticked in the menu (Shipped not), the trigger reading
+              "In progress", so the menu says what the trigger says (owner, 2026-11-25). Unticking everything comes back to it. */}
           <MultiFilter
             label="Status"
             all={IN_PROGRESS_LABEL}
             options={statusOptions}
-            picked={inProgressDefault ? [] : filters.status}
+            picked={filters.status}
+            {...(inProgressDefault ? { summary: IN_PROGRESS_LABEL } : {})}
             onPick={(v) => pick({ ...filters, status: v.length ? STATES.filter((s) => v.includes(s)) : [...IN_PROGRESS] })}
           />
           <MultiFilter label="Product" all="All products" options={productOptions} picked={filters.product} onPick={(v) => pick({ ...filters, product: v })} />
@@ -500,9 +500,9 @@ export function BranchesList(p: BranchesListProps) {
         <ViewSwitch view={view} onPick={setListView} board />
       </div>
 
-      {waiting.length > 0 && view !== 'board' && (
-        <ListGroup className="ex-waiting" id="bl-waiting" label="Waiting on you" count={waiting.length}>
-          {asList(waiting, true)}
+      {waitingShown.length > 0 && view !== 'board' && (
+        <ListGroup className="ex-waiting" id="bl-waiting" label="Waiting on you" count={waitingShown.length}>
+          {asList(waitingShown, true)}
         </ListGroup>
       )}
 

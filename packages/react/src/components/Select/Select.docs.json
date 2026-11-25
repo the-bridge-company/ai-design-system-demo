@@ -97,7 +97,7 @@
   ],
   "accessibility": [
     "Base UI Select: the trigger is a combobox button with aria-expanded; the popup is a listbox with options marked aria-selected and aria-disabled.",
-    "Keyboard: Enter, Space or Arrow keys open it; arrows move; typing jumps to a matching option; Enter selects; Escape closes and returns focus to the trigger.",
+    "Keyboard: Enter, Space or Arrow keys open it; arrows move; typing jumps to a matching option; Enter selects; a click outside closes and keeps the option highlighted with the arrows; Escape closes without picking and returns focus to the trigger.",
     "The Field label names the trigger; hint and error are linked through aria-describedby, and an error sets aria-invalid.",
     "With inlineLabel and no Field label, the inline label and the value name the trigger together (\"Product: All products\"), and the name follows each pick.",
     "With multiple, the listbox is aria-multiselectable; Enter or Space ticks an option and the list stays open until Escape or a click outside.",
@@ -177,10 +177,15 @@
       ]
     },
     {
-      "id": "close-on-outside-click",
+      "id": "pick-on-outside-click",
       "family": "Closing",
-      "text": "Closes on a click outside",
-      "try": "Open the list, then click anywhere outside it"
+      "text": "A click outside closes and keeps the highlighted option (with multiple, it only closes)",
+      "try": "Open the list, move to another option with the arrow keys, then click anywhere outside it",
+      "keys": [
+        "Enter",
+        "ArrowDown",
+        "click-outside"
+      ]
     },
     {
       "id": "tab-leaves",

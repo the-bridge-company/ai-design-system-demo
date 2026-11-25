@@ -69,7 +69,7 @@ describe('Select and Combobox behaviors (the docs on main)', () => {
       'Type to jump',
       'Enter picks and closes (with multiple, the list stays open)',
       'Closes on Escape',
-      'Closes on a click outside',
+      'A click outside closes and keeps the highlighted option (with multiple, it only closes)',
       'Tab leaves without picking',
       'Focus goes back to the trigger',
       'Page scroll paused while open, unless opened by touch',

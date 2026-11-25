@@ -1,4 +1,4 @@
-import { forwardRef, Fragment, useId, useMemo, type ButtonHTMLAttributes, type ReactNode, type RefObject } from 'react';
+import { forwardRef, Fragment, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type RefObject } from 'react';
 import { Select as BaseSelect } from '@base-ui/react/select';
 import { Check, ChevronDown } from 'lucide-react';
 import { cx } from '../../utils/cx';
@@ -174,10 +174,28 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
     <BaseSelect.Value id={valueId} className={styles.value} placeholder={placeholder} />
   );
 
+  // A single Select holds its own value when it is not controlled, so a click outside can pick the highlighted option.
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [ownValue, setOwnValue] = useState<string | null>(defaultValue ?? null);
+  const current = value === undefined ? ownValue : value;
+  const pick = (next: string | null) => {
+    if (value === undefined) setOwnValue(next);
+    onValueChange?.(next);
+  };
+
+  // A click outside closes the list and keeps the option highlighted with the keyboard. Leaving the list with the
+  // mouse clears the highlight, so a mouse user who clicks away changes nothing. With `multiple`, it only closes.
+  const pickHighlighted = () => {
+    const highlighted = popupRef.current?.querySelector('[role="option"][data-highlighted]');
+    const next = highlighted?.getAttribute('data-value');
+    if (next == null || next === current || byValue.get(next)?.disabled) return;
+    pick(next);
+  };
+
   // A multiple Select keeps an array value; a single one a string (or null).
   const rootValue = multiple
     ? { value: values === undefined ? undefined : [...values], onValueChange: onValuesChange ? (next: unknown) => onValuesChange([...((next as string[] | null) ?? [])]) : undefined }
-    : { value, defaultValue, onValueChange: onValueChange ? (next: unknown) => onValueChange((next as string | null) ?? null) : undefined };
+    : { value: current, onValueChange: (next: unknown) => pick((next as string | null) ?? null) };
 
   const select = (
     <BaseSelect.Root
@@ -186,7 +204,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
       {...rootValue}
       open={open}
       defaultOpen={defaultOpen}
-      onOpenChange={onOpenChange ? (next) => onOpenChange(next) : undefined}
+      onOpenChange={(next, details) => {
+        if (!next && !multiple && details.reason === 'outside-press') pickHighlighted();
+        onOpenChange?.(next);
+      }}
       required={required ?? (field.required || undefined)}
       disabled={disabled}
       name={name}
@@ -216,11 +237,11 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
       </BaseSelect.Trigger>
       <BaseSelect.Portal container={portalContainer ?? undefined}>
         <BaseSelect.Positioner className={styles.positioner} sideOffset={4} alignItemWithTrigger={false} {...scope}>
-          <BaseSelect.Popup className={styles.popup}>
+          <BaseSelect.Popup ref={popupRef} className={styles.popup}>
             <BaseSelect.List className={styles.list}>
               {groups.map((g, gi) => {
                 const rendered = g.options.map((o) => (
-                  <BaseSelect.Item key={o.value} value={o.value} label={o.label} disabled={o.disabled} className={styles.item}>
+                  <BaseSelect.Item key={o.value} value={o.value} label={o.label} disabled={o.disabled} data-value={o.value} className={styles.item}>
                     <span className={styles.itemBody}>
                       <BaseSelect.ItemText className={styles.itemText}>{o.label}</BaseSelect.ItemText>
                       {o.description && <span className={styles.itemDescription}>{o.description}</span>}
